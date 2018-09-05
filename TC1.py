@@ -17,15 +17,6 @@ path = pathHeli
 
 plt.close('all')
 
-#%% Ejercicio 1
-
-'''
-1) Considere las tres redes de interacción de proteínas relevadas para levadura disponibles en la
-página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H.txt), de copertenencia
-a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
-obtenidas del Yeast Interactome Database.
-'''
-#%% Ejercicio 1: Cargar datos
 def ldata(archivo):
     # función de lectura de las tablas
     f=open(archivo)
@@ -35,6 +26,16 @@ def ldata(archivo):
         col=line.split()
         data.append(col)	
     return data
+
+#%% Ejercicio 1
+
+'''
+1) Considere las tres redes de interacción de proteínas relevadas para levadura disponibles en la
+página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H.txt), de copertenencia
+a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
+obtenidas del Yeast Interactome Database.
+'''
+#%% Ejercicio 1: Cargar datos
 
 redesStr = ['Y2H','AP-MS','LIT']
 redes = {}
@@ -82,7 +83,48 @@ for s in redesStr:
 	df1b.ix[s,'DegDensity'] = nx.density(redes[s])
 	df1b.ix[s,'ClustGlob'] = nx.transitivity(redes[s])
 	df1b.ix[s,'ClustLoc'] = nx.average_clustering(redes[s]) # corroborar que es equiv a tomar promedio de f
-	giant = max(nx.connected_component_subgraphs(redes[s]), key=len)	
+	giant = max(nx.connected_component_subgraphs(redes[s]), key=len)
+    # len es el numero de nodos
 	df1b.ix[s,'Diameter'] = nx.diameter(giant)
     
-    
+#a = nx.connected_component_subgraphs(redes[s])
+#nx.diameter(giant)
+#%% Ej. 1(c)
+
+#%% Ej. 1(d)
+
+#%% Ej. 2
+
+dolphins = nx.read_gml(path + 'dolphins.gml')
+dolphinsGender = np.array(ldata(path + 'dolphinsGender.txt'))
+
+for n,g in zip(dolphins,range(0,len(dolphinsGender))):
+    dolphins.nodes[n]["gender"] = dolphinsGender[g,1]
+
+#%% 2a
+
+nx.draw(dolphins, 
+        width=5, 
+        node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphins, "gender").values()], 
+        node_size=400,
+        font_size=20,
+        with_labels=True
+       )
+plt.show()
+
+
+
+#%%
+
+
+
+
+
+
+
+
+
+
+
+
+
