@@ -1,0 +1,46 @@
+b) Para calcular las características de la red a partir de la matriz de adyacencia:
+-------------------------
+
+i) Cantidad de nodos (N):
+Cantidad de filas (o columnas) de la matriz.
+
+
+ii) Número total de enlaces (L):
+Cantidad de coeficientes no nulos tiene en la matriz (en total, i.e. en todas sus filas y columnas).
+
+
+iii) Red dirigida o no dirigida:
+Si es simétrica, la red es no dirigida. Si es asimétrica, la red es dirigida. Esto significa que la interacción del nodo i con el j es distinta que la del j con el i, por lo que el coeficiente a_ij es diferente del a_ji.
+
+iv) Grado medio (<k>):
+La media de la cantidad de elementos no nulos de cada fila (o columna).
+
+Grado máximo (k_máx):
+Máximo de las cantidades de elementos no nulos de las filas (o columnas).
+
+Grado mínimo (k_mín):
+Mínimo de las cantidades de elementos no nulos de las filas (o columnas).
+
+v) Densidad: (cantidad de enlaces / cantidad de enlaces posibles)
+Cantidad de elementos no nulos en la matriz, dividido por la cantidad total de elementos de la matriz (N^2).
+
+vi) Coeficientes de clustering (<C_i> y C_triángulo):
+
+(...)
+
+vii) Diámetro:
+Autovalores: https://math.stackexchange.com/questions/117501/g-graph-of-diameter-d-implies-an-adjacency-matrix-with-at-least-d1-distinct-eig
+
+
+
+
+
+-----------------------------------------------------------------------------
+c) [Habría que pensarlo y redactarlo. Pongo de manera informal lo que se me ocurre a mí.]
+
+N tiene que ver con cuántas proteínas aparecen en la lista, así que no hay mucho que analizar, excepto que es un número par, y eso tiene sentido.
+Habría que verificar las relaciones entre N, L y <k>, densidad.
+
+No dirigido: es razonable por tratarse de interacción entre proteínas. (Tendría que entender mejor qué significa interacción en este contexto, pero si es «contacto», entonces tiene mucho sentido.)
+
+El diámetro no puede determinarse porque el grafo no está unido, sino que está formado por múltiples partes aisladas, lo que tiene sentido, porque uno no esperaría que todas las proteínas interactúen con muchas otras (supongo yo, que no sé nada del tema. Heli, ayuda, por favor...) de manera que quede un único grafo unificado.

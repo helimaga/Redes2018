@@ -7,10 +7,25 @@ Trabajo Computacional 1: Ejercicio 1
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
+pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
+pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
+pathSanti = ''
+
+path = pathHeli
 
 plt.close('all')
 
+#%% Ejercicio 1
+
+'''
+1) Considere las tres redes de interacción de proteínas relevadas para levadura disponibles en la
+página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H.txt), de copertenencia
+a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
+obtenidas del Yeast Interactome Database.
+'''
+#%% Ejercicio 1: Cargar datos
 def ldata(archivo):
     # función de lectura de las tablas
     f=open(archivo)
@@ -21,147 +36,53 @@ def ldata(archivo):
         data.append(col)	
     return data
 
-path='/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
+redesStr = ['Y2H','AP-MS','LIT']
+redes = {}
 
-# Se cargan los datos en tres listas:
-ListaY2H=ldata(path+'yeast_Y2H.txt')
-ListaAPMS=ldata(path+'yeast_AP-MS.txt')
-ListaLIT=ldata(path+'yeast_LIT.txt')
+for s in redesStr:
+	redes[s] = nx.Graph(ldata(path + 'yeast_' + s + '.txt'))
 
-# Se crean los grafos a partir de las listas:
-Y2H = nx.Graph(ListaY2H)
-APMS = nx.Graph(ListaAPMS)
-LIT = nx.Graph(ListaLIT)
 
-redes = [Y2H,APMS,LIT]
-redesStr = ['Y2H','APMS','LIT']
-# Ejercicio 1 (a): Presentación de una comparación gráfica de las tres redes.
-
-plt.figure()
-
-for r in redes:
-    nx.draw(r, with_labels=True, font_weight='bold')
-
-plt.show()
-
-# Ejercicio 1 (b): Caracteristicas de las redes
-
-# 1.1 numero total de nodos
-for r in redes:
-    r.number_of_nodes()
-
-# Y2H.nodes()
-
-# 1.2 numero total de enlaces
-for r in redes:
-    r.number_of_edges()
-
-#%% 1.b.4: PRUEBA grado medio de la red FALTA para las otras 2
+#%% Ej. 1(a)
 '''
-degRedes={}
-degredesMean={}
-
-for s, r in zip(redesStr,redes):
-
-    degredes{s}=list(r.degree())
-    degredes{s} = np.array(degredes{s})
-    degredes{s} = degredes[:,1]
-    degredes{s} = degredes{s}.astype(int)
-    degredesMean{s} = np.mean(degredes{s})
+Presente una comparación gráfica de las 3 redes.
 '''
-#%% 1b: grado max/min de la red FALTA para las otras 2
-for r in redes:
-    degY2HMax = np.max(degY2H)
-    degY2HMin = np.min(degY2H)
 
-#%% 2 Dirigida o no dirigida
-# RTA: la y2h seria no dirigida. 1 no hay pares repetidos. 
-# 2 conocimiento previo sobre el experimento
-ListaY2HSort = np.sort(ListaY2H)
-ListaY2HSortUnique = np.unique(ListaY2HSort,axis=0)
-
-#%% 5 densidad de la red FALTA para los OTROS!!!
-
-#Y2H.is_directed() como sabee?? Tiro false =)
-
-nx.density(Y2H)
-
-# densidad de grafos tipo
-nx.density(nx.empty_graph(10))
-nx.density(nx.complete_graph(10))
-nx.density(nx.star_graph(10))
-
-#%% 6 Clustering: C triangulo (GLOBAL)
-
-# T=3#triangles#triads
-
-nx.transitivity(Y2H)
-
-#%% 6 Clustering: C triangulo (GLOBAL)
-
-# T=3#triangles#triads
-f = nx.clustering(Y2H)
-
-nx.average_clustering(Y2H) # corroborar que es equiv a tomar promedio de f
-
-nx.diameter(nx.star_graph(4))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for s in redesStr:
+	plt.figure()
+	nx.draw(redes[s], with_labels=True, font_weight='bold')
+	plt.show()
+#%% Ej. 1(b)
+'''
+1b. Resuma en una tabla las siguientes características de dichas redes
+i. El número total de nodos, N
+ii. El número total de enlaces L, de la red
+iii. Si se trata de una red dirigida o no-dirigida
+iv. El grado medio/máximo/mínimo de la red
+v. La densidad de la red
+vi. Los coeficientes de clustering <Ci> y C_delta de la red.
+vii. Diámetro de la red.
+'''
+
+df1b = pd.DataFrame()
+
+for s in redesStr:
+	df1b.ix[s,'Nodes'] = redes[s].number_of_nodes()
+	df1b.ix[s,'Edges'] = redes[s].number_of_edges()
+	if len(redes[s]) == len(np.unique(redes[s],axis=0)):
+		df1b.ix[s,'Directionality'] = 'Prob-Undir'
+	else:
+		df1b.ix[s,'Directionality'] = 'Dir'
+	netDeg = np.array(list(redes[s].degree()))
+	netDeg = netDeg[:,1]
+	netDeg = netDeg.astype(int)
+	df1b.ix[s,'DegMean'] = np.mean(netDeg)
+	df1b.ix[s,'DegMin'] = np.min(netDeg)
+	df1b.ix[s,'DegMax'] = np.max(netDeg)
+	df1b.ix[s,'DegDensity'] = nx.density(redes[s])
+	df1b.ix[s,'ClustGlob'] = nx.transitivity(redes[s])
+	df1b.ix[s,'ClustLoc'] = nx.average_clustering(redes[s]) # corroborar que es equiv a tomar promedio de f
+	giant = max(nx.connected_component_subgraphs(redes[s]), key=len)	
+	df1b.ix[s,'Diameter'] = nx.diameter(giant)
+    
+    
