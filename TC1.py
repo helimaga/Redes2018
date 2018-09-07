@@ -11,9 +11,9 @@ import pandas as pd
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
-pathSanti = ''
+pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathHeli
+path = pathSanti
 
 plt.close('all')
 
@@ -114,15 +114,96 @@ plt.show()
 
 
 
+#%% Ej. 3
+
+'''
+1) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los
+sistemas autónomos de internet relevada a mediados de 2006.
+'''
+
+Newman = nx.read_gml(path + 'as-22july06.gml')
+
+#%% 3a
+'''
+a) Encuentre gráficamente la distribución de grado P k como función de k explorando
+diferentes alternativas: un bineado lineal o logarítmico, utilizando escalas logarítmicas o
+lineales en uno o ambos ejes. Discuta que alternativa permite apreciar mejor el carácter
+libre de escala de dicha distribución.
+'''
+degree_sequence = sorted([d for n, d in Newman.degree()], reverse=True)  # Se arma la sucesión de los grados (ordenada).
+degreeCount = collections.Counter(degree_sequence) # Se cuenta cuántos nodos hay con cada grado.
+deg, cnt = zip(*degreeCount.items()) # Se almacenan los grados y la cantidad de nodos con ese grado.
+
+
+fig, ax = plt.subplots()
+plt.bar(deg, cnt, color='b')
+plt.title("Bineado lineal")
+plt.ylabel("Cantidad de nodos")
+plt.xlabel("Grado")
+plt.grid()
+
+
+fig, ax = plt.subplots()
+plt.bar(deg, cnt, color='b')
+ax.set_yscale('log')
+plt.title("Bineado logari'tmico")
+plt.ylabel("Cantidad de nodos")
+plt.xlabel("Grado")
+plt.grid()
+
+# Discutir.
+
+'''
+b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución.
+'''
+
+#%% Ej. 4
+
+'''
+4) Asortatividad
+'''
+
+'''
+a) Considere la red de colaboraciones científicas (netscience.gml) y la red de internet (as-
+july06.gml). Analice si nodos de alto grado tienden a conectarse con nodos de alto grado
+o por el contrario suelen conectarse a nodos de bajo grado? (i.e la red es asortativa o
+disortativa respecto al grado?).
+'''
+
+
+'''
+i. Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos.
+[hint R: se puede estimar primero el grado medio de los vecinos de cada nodo de
+la red y luego utilizar aggregate sobre esos datos, que permite estimar cantidades
+sobre subconjuntos determinados de datos de acuerdo a diferentes criterios]
+'''
+
+'''
+ii. Analizar la tendencia observada en un gráfico que consigne dicho valor k nn (k)
+como función del grado.
+
+'''
+
+'''
+iii.Asumiendo que k_nn (k) = ak^μ , estime el exponente de correlación a partir de
+realizar una regresión de log k_nn ~ log k. Asegurese de graficar el fiteo en el
+grafico anterior. [hint R: lm permite hacer regresiones lineales]
+'''
+
+'''
+iv. Considere la red de colaboraciones y la de internet nuevamente Encuentre
+cuantitativamente la asortatividad de la red utilizando ahora el estimador
+propuesto por Newman (ver PDF).
+Para ello tenga encuenta lo desarrollado en las eqs [8.26 – 8.29] del libro de
+Newman.Como se corresponde este coeficiente con el estimado en el punto
+anterior? A qué se debe?
+'''
+
 #%%
-
-
-
-
-
-
-
-
+'''
+b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
+que observa en cuanto a la asortatividad reportada?
+'''
 
 
 
