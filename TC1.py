@@ -8,12 +8,13 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import scipy as sp
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathSanti
+path = pathHeli
 
 plt.close('all')
 
@@ -94,14 +95,31 @@ for s in redesStr:
 #%% Ej. 1(d)
 
 #%% Ej. 2
+    
+'''
+2) Considere la red social de 62 delfines de Nueva Zelanda
+'''
 
 dolphins = nx.read_gml(path + 'dolphins.gml')
-dolphinsGender = np.array(ldata(path + 'dolphinsGender.txt'))
+dolphinsGender = np.char.lower(np.array(ldata(path+'dolphinsGender.txt')))
 
-for n,g in zip(dolphins,range(0,len(dolphinsGender))):
-    dolphins.nodes[n]["gender"] = dolphinsGender[g,1]
+dolphinsSIndex = dolphinsGender[:, 0].argsort()
+dolphinsGenderSort=dolphinsGender[dolphinsSIndex]
+
+for n,g in zip(dolphins,range(len(dolphinsGenderSort))):
+    dolphins.nodes[n]["gender"] = dolphinsGenderSort[g, 1]
+ 
+dolphins.nodes("gender")
+
 
 #%% 2a
+
+'''
+Examine las diferentes opciones de layout para este grafo e identifique la que le resulte
+mas informativa. Justifique su eleccion detallando las caracteristicas estructurales
+de la red que su eleccion pone en evidencia. Incluya en la representacion grafica de la
+red informacion sobre el sexo de los delfines. 
+'''
 
 nx.draw(dolphins, 
         width=5, 
@@ -112,13 +130,99 @@ nx.draw(dolphins,
        )
 plt.show()
 
+#%% 2b
+
+'''
+Se trata de una red en la cual prevalece la homofilia en la variable genero?
+Para responder
+i.Considere la distribucion nula para la fraccion de enlaces que vinculan generos diferentes, generada a partir de al menos 1000 asignaciones aleatorias de genero
+ii.A partir de lo obtenido proponga una estimacion para el valor y el error de dichas cantidad cuando no existe vinculo entre topologia de la red y asignacion de genero
+Compare su estimacion con el valor medio esperado.
+iii.Estime la significancia estadistica del valor observado en el caso de la red real
+'''
+#acá hay un temita con respecto a cómo considerar a los 'na', por el momento si hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de generos diferentes
+#primero cuento los enlaces entre géneros diferentes
+edgesxyGender=0
+
+for (u,v) in dolphins.edges():
+    if dolphins.node[u]['gender'] != dolphins.node[v]['gender']:
+        print (u,v)
+        edgesxyGender+=1
+
+nodesTot=dolphins.number_of_nodes()
+edgesTot=dolphins.number_of_edges()
+
+#aca calculo la fraccion de enlaces entre generos diferentes para la red de estudio
+ratioEdgesGender=edgesxyGender/edgesTot
+
+#luego hago 1000 asignaciones al azar del género a la red dolphinsRnd
+dolphinsRnd=dolphins.copy()
+ratioEdgesRndGender=[]
+
+for i in range(1000):
+    np.random.shuffle(dolphinsGenderSort[:,1])
+    for n,g in zip(dolphinsRnd,range(len(dolphinsGenderSort))):
+        dolphinsRnd.nodes[n]["gender"] = dolphinsGenderSort[g, 1]
+    edgesxyRndGender=0
+    for (u,v) in dolphinsRnd.edges():
+        if dolphinsRnd.node[u]['gender'] != dolphinsRnd.node[v]['gender']:
+            edgesxyRndGender+=1
+    ratioEdgesRndGender.append(edgesxyRndGender/edgesTot)
+
+#ploteo la distribucion nula (random) para la fraccion de enlaces entre generos diferentes
+plt.hist(ratioEdgesRndGender, bins=50)
+plt.xlabel('Fraccion de enlaces que vinculan generos diferentes')
+plt.ylabel('Frecuencia')
+plt.show()
+
+#calculo la media y el desvio estadar para la fraccion de enlaces de la dist nula
+pop_mu=np.mean(ratioEdgesRndGender)
+pop_std=np.std(ratioEdgesRndGender)
+
+#calculo la fraccion de nodos 'f', 'm' y 'na' para la red de estudio
+probF=(dolphinsGender[:,1]=='f').sum()/nodesTot
+probM=(dolphinsGender[:,1]=='m').sum()/nodesTot
+pronNA=(dolphinsGender[:,1]=='na').sum()/nodesTot
+
+#esto siguiente valdria si no tuviesemos la categoria 'na'
+#estimo la media y la var de la fraccion de enlaces entre generos diferentes en una red en la cual no tengo en cuenta la topologia de la misma
+true_mu=2*probF*probM
+true_var=true_mu*(1-true_mu)
+
+#los datos de nuestra muestra/red de estudio, los '1's representan enlaces entre generos diferentes y los '0's entre el mismo genero
+datadolphins=np.asarray([1]*63+[0]*96)
+
+#test t de student, prueba a 2 colas 
+#haciendo aqui el test-t de student asumo que la media de la fraccion de enlaces entre generos diferentes sigue una distribucion normal, lo cual podria no ser cierto
+
+ttest1 = sp.stats.ttest_1samp(datadolphins, pop_mu)
+#rechazaria HO
+ttest2 = sp.stats.ttest_1samp(datadolphins, true_mu)
+#no rechazaria HO
+
+
+# =============================================================================
+
+#G = nx.Graph()
+#G.add_node(1,color='red')
+#G.add_node(2,color='red')
+#G.add_node(3,color='blue')
+#G.add_node(4,color='blue')
+#G.add_node(5,color='red')
+#
+#
+#G.add_edges_from([(1,2),(1,3),(3,4),(4,5)])
+#
+#for (u,v) in G.edges:
+#    if G.node[u]['color'] != G.node[v]['color']:
+#        print (u,v)
+# =============================================================================
 
 
 #%% Ej. 3
 
 '''
-1) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los
-sistemas autónomos de internet relevada a mediados de 2006.
+1) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los sistemas autónomos de internet relevada a mediados de 2006.
 '''
 
 Newman = nx.read_gml(path + 'as-22july06.gml')
