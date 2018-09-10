@@ -201,6 +201,20 @@ ttest2 = sp.stats.ttest_1samp(datadolphins, true_mu)
 #no rechazaria HO
 
 
+
+import statsmodels.api as sm
+    
+sm.qqplot(np.asarray(ratioEdgesRndGender), line='45')
+pylab.show()
+sp.stats.shapiro(np.asarray(ratioEdgesRndGender))
+
+#muy lejos de ser normal la distribucion de la fraccion de enlaces que unen generos distintos
+#por ende, es cualquiera hacer un test-t
+
+
+
+
+
 # =============================================================================
 
 #G = nx.Graph()
