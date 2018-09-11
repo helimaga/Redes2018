@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy as sp
+from scipy import stats
+from matplotlib import pylab
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
@@ -17,6 +19,16 @@ pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 path = pathSanti
 
 plt.close('all')
+
+#%%
+# Configuraciones para los gráficos:
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
+TitleSize=20
+AxisLabelSize=20
+LegendSize=11
+NumberSize=12
 
 def ldata(archivo):
     # función de lectura de las tablas
@@ -172,8 +184,11 @@ for i in range(1000):
 #ploteo la distribucion nula (random) para la fraccion de enlaces entre generos diferentes
 plt.figure()
 plt.hist(ratioEdgesRndGender, bins=50)
-plt.xlabel('Fraccion de enlaces que vinculan generos diferentes')
-plt.ylabel('Frecuencia')
+plt.title(r'',fontsize=TitleSize)
+plt.ylabel(r'Frecuencia',fontsize=AxisLabelSize)
+plt.xlabel(r'Fracci\'on de enlaces que vinculan g\'eneros diferentes',fontsize=AxisLabelSize)
+#plt.grid()
+plt.tight_layout()
 plt.show()
 
 #calculo la media y el desvio estadar para la fraccion de enlaces de la dist nula
@@ -244,37 +259,50 @@ Newman = nx.read_gml(path + 'as-22july06.gml')
 
 #%% 3a
 '''
-a) Encuentre gráficamente la distribución de grado P k como función de k explorando
+a) Encuentre gráficamente la distribución de grado P_k como función de k explorando
 diferentes alternativas: un bineado lineal o logarítmico, utilizando escalas logarítmicas o
 lineales en uno o ambos ejes. Discuta que alternativa permite apreciar mejor el carácter
 libre de escala de dicha distribución.
 '''
+import collections
+
 degree_sequence = sorted([d for n, d in Newman.degree()], reverse=True)  # Se arma la sucesión de los grados (ordenada).
 degreeCount = collections.Counter(degree_sequence) # Se cuenta cuántos nodos hay con cada grado.
 deg, cnt = zip(*degreeCount.items()) # Se almacenan los grados y la cantidad de nodos con ese grado.
 
-plt.figure()
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
-plt.title("Bineado lineal")
-plt.ylabel("Cantidad de nodos")
-plt.xlabel("Grado")
+plt.tick_params(axis='both', which='major', labelsize=NumberSize)
+plt.legend(loc='best',fontsize=LegendSize)
+plt.title(r'Bineado lineal',fontsize=TitleSize)
+plt.ylabel(r'Cantidad de nodos',fontsize=AxisLabelSize)
+plt.xlabel(r'Grado',fontsize=AxisLabelSize)
 plt.grid()
+plt.tight_layout()
+plt.show()
 
-plt.figure()
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
 ax.set_yscale('log')
-plt.title("Bineado logari'tmico")
-plt.ylabel("Cantidad de nodos")
-plt.xlabel("Grado")
+plt.tick_params(axis='both', which='major', labelsize=NumberSize)
+plt.legend(loc='best',fontsize=LegendSize)
+plt.title(r'Bineado logar\'itmico',fontsize=TitleSize)
+plt.ylabel(r'Cantidad de nodos',fontsize=AxisLabelSize)
+plt.xlabel(r'Grado',fontsize=AxisLabelSize)
 plt.grid()
+plt.tight_layout()
+plt.show()
 
 # Discutir.
 
 '''
 b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución.
 '''
+#import igraph
+
+# fit_power_law fits a power-law distribution to a data set. 
+#fit_power_law(x, xmin = NULL, start = 2, force.continuous = FALSE, implementation = c("plfit", "R.mle"))
+
 
 #%% Ej. 4
 
