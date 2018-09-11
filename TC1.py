@@ -1,5 +1,5 @@
 '''
-Trabajo Computacional 1: Ejercicio 1
+Trabajo Computacional 1
 
 '''
 #%%
@@ -14,7 +14,7 @@ pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los ar
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathHeli
+path = pathSanti
 
 plt.close('all')
 
@@ -120,7 +120,7 @@ mas informativa. Justifique su eleccion detallando las caracteristicas estructur
 de la red que su eleccion pone en evidencia. Incluya en la representacion grafica de la
 red informacion sobre el sexo de los delfines. 
 '''
-
+plt.figure()
 nx.draw(dolphins, 
         width=5, 
         node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphins, "gender").values()], 
@@ -170,6 +170,7 @@ for i in range(1000):
     ratioEdgesRndGender.append(edgesxyRndGender/edgesTot)
 
 #ploteo la distribucion nula (random) para la fraccion de enlaces entre generos diferentes
+plt.figure()
 plt.hist(ratioEdgesRndGender, bins=50)
 plt.xlabel('Fraccion de enlaces que vinculan generos diferentes')
 plt.ylabel('Frecuencia')
@@ -252,7 +253,7 @@ degree_sequence = sorted([d for n, d in Newman.degree()], reverse=True)  # Se ar
 degreeCount = collections.Counter(degree_sequence) # Se cuenta cuántos nodos hay con cada grado.
 deg, cnt = zip(*degreeCount.items()) # Se almacenan los grados y la cantidad de nodos con ese grado.
 
-
+plt.figure()
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
 plt.title("Bineado lineal")
@@ -260,7 +261,7 @@ plt.ylabel("Cantidad de nodos")
 plt.xlabel("Grado")
 plt.grid()
 
-
+plt.figure()
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
 ax.set_yscale('log')
