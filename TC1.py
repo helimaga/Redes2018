@@ -275,6 +275,7 @@ deg, cnt = zip(*degreeCount.items()) # Se almacenan los grados y la cantidad de 
 
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
+ax.set_yscale('log')
 plt.tick_params(axis='both', which='major', labelsize=NumberSize)
 plt.legend(loc='best',fontsize=LegendSize)
 plt.title(r'Bineado lineal',fontsize=TitleSize)
@@ -286,6 +287,7 @@ plt.show()
 
 fig, ax = plt.subplots()
 plt.bar(deg, cnt, color='b')
+ax.set_xscale('log')
 ax.set_yscale('log')
 plt.tick_params(axis='both', which='major', labelsize=NumberSize)
 plt.legend(loc='best',fontsize=LegendSize)
