@@ -29,6 +29,8 @@ TitleSize=20
 AxisLabelSize=20
 LegendSize=11
 NumberSize=12
+LabelSize=8 # etiquetas de los nodos
+NodeSize=50 # tamaño de los nodos
 
 def ldata(archivo):
     # función de lectura de las tablas
@@ -48,7 +50,7 @@ página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H
 a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
 obtenidas del Yeast Interactome Database.
 '''
-#%% Ejercicio 1: Cargar datos
+# Ejercicio 1: Cargar datos
 
 redesStr = ['Y2H','AP-MS','LIT']
 redes = {}
@@ -64,8 +66,9 @@ Presente una comparación gráfica de las 3 redes.
 
 for s in redesStr:
 	plt.figure()
-	nx.draw(redes[s], with_labels=True, font_weight='bold')
+	nx.draw(redes[s], with_labels=True, font_weight='bold',font_size=LabelSize,node_size=NodeSize)
 	plt.show()
+
 #%% Ej. 1(b)
 '''
 1b. Resuma en una tabla las siguientes características de dichas redes
@@ -298,11 +301,16 @@ plt.show()
 '''
 b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución.
 '''
-#import igraph
+import igraph
 
 # fit_power_law fits a power-law distribution to a data set. 
 #fit_power_law(x, xmin = NULL, start = 2, force.continuous = FALSE, implementation = c("plfit", "R.mle"))
 
+fit = igraph.fit_power_law(deg+1, 1)
+
+#g <- barabasi.game(1000) # increase this number to have a better estimate
+#d <- degree(g, mode="in")
+#fit1 <- fit_power_law(d+1, 10)
 
 #%% Ej. 4
 
