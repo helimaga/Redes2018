@@ -16,13 +16,13 @@ pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los ar
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathSanti
+path = pathHeli
 
 plt.close('all')
 
 #%%
 # Configuraciones para los gráficos:
-plt.rc('text', usetex=True)
+plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
 TitleSize=20
@@ -110,7 +110,7 @@ for s in redesStr:
 #%% Ej. 1(d)
 
 #%% Ej. 2
-    
+
 '''
 2) Considere la red social de 62 delfines de Nueva Zelanda
 '''
@@ -186,10 +186,10 @@ for i in range(1000):
 
 #ploteo la distribucion nula (random) para la fraccion de enlaces entre generos diferentes
 plt.figure()
-plt.hist(ratioEdgesRndGender, bins=50)
-plt.title(r'',fontsize=TitleSize)
-plt.ylabel(r'Frecuencia',fontsize=AxisLabelSize)
-plt.xlabel(r'Fracci\'on de enlaces que vinculan g\'eneros diferentes',fontsize=AxisLabelSize)
+plt.hist(ratioEdgesRndGender, bins=40)
+plt.title('',fontsize=TitleSize)
+plt.ylabel('Frecuencia',fontsize=AxisLabelSize)
+plt.xlabel('Fraccion de enlaces que vinculan generos diferentes',fontsize=AxisLabelSize)
 #plt.grid()
 plt.tight_layout()
 plt.show()
@@ -230,10 +230,6 @@ sp.stats.shapiro(np.asarray(ratioEdgesRndGender))
 #muy lejos de ser normal la distribucion de la fraccion de enlaces que unen generos distintos
 #por ende, es cualquiera hacer un test-t
 
-
-
-
-
 # =============================================================================
 
 #G = nx.Graph()
@@ -251,8 +247,32 @@ sp.stats.shapiro(np.asarray(ratioEdgesRndGender))
 #        print (u,v)
 # =============================================================================
 
+#%%
 
-#%% Ej. 3
+# Identifique alguna metodología basada en observables topológicos para eliminar
+# nodos secuencialmente de la red de manera de dividirla en dos componentes de tamaños
+# comparables en el menor número de pasos. Explique y muestre los resultados obtenidos.
+# Intente cuantificar su estrategia comparándola con lo que se obtendría al eliminar nodos
+# de manera aleatoria.
+
+dolphinsSplit = dolphins.copy()
+edges = list(dolphins.edges())
+for ed in edges:
+    edGender = (dolphins.nodes[ed[0]]['gender'],dolphins.nodes[ed[1]]['gender'])
+    edGender = sorted(edGender, key=str.lower)
+    if (edGender == ['f','m']) | (edGender == ['m','na']):
+        dolphinsSplit.remove_edge(*ed)
+            
+plt.figure()
+nx.draw(dolphinsSplit, 
+        width=2, 
+        node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphins, "gender").values()], 
+        node_size=40,
+        font_size=5,
+        with_labels=True
+       )
+
+
 
 '''
 1) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los sistemas autónomos de internet relevada a mediados de 2006.
@@ -273,15 +293,28 @@ degree_sequence = sorted([d for n, d in Newman.degree()], reverse=True)  # Se ar
 degreeCount = collections.Counter(degree_sequence) # Se cuenta cuántos nodos hay con cada grado.
 deg, cnt = zip(*degreeCount.items()) # Se almacenan los grados y la cantidad de nodos con ese grado.
 
+binsLin = np.linspace(min(deg),max(deg),151)
+binsLog = np.logspace(np.log10(min(deg)),np.log10(max(deg)),151)
+sp=0
+#fig, axes = plt.subplots(2, 2, subplot_kw=dict(polar=True))
+#for binning in [binsLog,binsLin]:
+#    for scale in ['log','lin']:
+#        sp=sp+1
+#        fig, ax = plt.subplots(2,2,sp)
+#        plt.hist(deg, bins=binning, edgecolor='k')
+#        ax.set_xscale(scale)
+#        ax.set_yscale(scale)
+
 fig, ax = plt.subplots()
-plt.bar(deg, cnt, color='b')
+plt.bar(deg, cnt, color='b', edgecolor='k')
+ax.set_xscale('log')
 ax.set_yscale('log')
 plt.tick_params(axis='both', which='major', labelsize=NumberSize)
-#plt.legend(loc='best',fontsize=LegendSize)
+plt.legend(loc='best',fontsize=LegendSize)
 plt.title(r'Bineado lineal',fontsize=TitleSize)
 plt.ylabel(r'Cantidad de nodos',fontsize=AxisLabelSize)
 plt.xlabel(r'Grado',fontsize=AxisLabelSize)
-#plt.grid()
+plt.grid()
 plt.tight_layout()
 plt.show()
 
@@ -361,8 +394,27 @@ anterior? A qué se debe?
 b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
 que observa en cuanto a la asortatividad reportada?
 '''
+#%% Leer redes
 
+redesStr = ['netscience','as-22july06']
+redes = {}
+avnd = {}
+degree = {}
+nodes = {}
+degreeAvnd = {}
 
+for s in redesStr:
+	redes[s] = nx.read_gml(path + s + '.gml')
 
+nodes = redes[s].nodes()
+avnd = nx.average_neighbor_degree(redes[s])
+degree0 = redes[s].degree()
 
+ds = [dict(degree0), avnd]
+d = {}
+for k in avnd.keys():
+    d[k] = list(d[k] for d in ds)
+
+degreeAvnd = d.values()
+degreeAvnd = list(degreeAvnd)
 
