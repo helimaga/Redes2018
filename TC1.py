@@ -11,12 +11,13 @@ import pandas as pd
 import scipy as sp
 from scipy import stats
 from matplotlib import pylab
+from sklearn.linear_model import LinearRegression
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
-pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/Redes2018/'
+pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathHeli
+path = pathJuancho
 
 plt.close('all')
 
@@ -419,7 +420,7 @@ degree = {}
 nodes = {}
 degreeAvnd = {}
 
-for s in redesStr:
+for s in redesStr: # cambiar!!!
 	redes[s] = nx.read_gml(path + s + '.gml')
 
 nodes = redes[s].nodes()
@@ -432,5 +433,39 @@ for k in avnd.keys():
     d[k] = list(d[k] for d in ds)
 
 degreeAvnd = d.values()
-degreeAvnd = list(degreeAvnd)
+degreeAvnd = np.array(list(degreeAvnd))
 
+#%% Grafico
+
+# x from 0 to 30
+
+x = np.transpose(degreeAvnd[:,0])
+y = np.transpose(degreeAvnd[:,1])
+
+x = x.reshape((-1,1))  # conversion between (N,) dimension arrays and (N,1) 
+y = y.reshape((-1,1))
+
+logx = np.log10(x)
+logy = np.log10(y)
+
+logx = logx.reshape((-1,1))
+logy = logy.reshape((-1,1))
+
+model = LinearRegression()
+model.fit(logx, logy)
+
+logx_new = np.linspace(min(logx), max(logx), 100)
+logy_new = model.predict(logx_new[:, np.newaxis])
+
+plt.figure()
+plt.plot(x, y,'.k')
+plt.plot(10**logx_new, 10**logy_new,'r')
+plt.xlabel('Degree, k')
+plt.ylabel('Avergage degree of neighbors, knn')
+plt.xscale('log')
+plt.yscale('log')
+
+
+plt.show()
+
+#%%
