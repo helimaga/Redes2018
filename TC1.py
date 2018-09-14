@@ -157,6 +157,7 @@ iii.Estime la significancia estadistica del valor observado en el caso de la red
 '''
 #acá hay un temita con respecto a cómo considerar a los 'na', por el momento si hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de generos diferentes
 #primero cuento los enlaces entre géneros diferentes
+
 edgesxyGender=0
 
 for (u,v) in dolphins.edges():
@@ -170,11 +171,14 @@ edgesTot=dolphins.number_of_edges()
 #aca calculo la fraccion de enlaces entre generos diferentes para la red de estudio
 ratioEdgesGender=edgesxyGender/edgesTot
 
+#ESTRATEGIA 1: PERMUTACION 
+
 #luego hago 1000 asignaciones al azar del género a la red dolphinsRnd
 dolphinsRnd=dolphins.copy()
 ratioEdgesRndGender=[]
+number_of_iter=10000
 
-for i in range(1000):
+for i in range(number_of_iter):
     np.random.shuffle(dolphinsGenderSort[:,1])
     for n,g in zip(dolphinsRnd,range(len(dolphinsGenderSort))):
         dolphinsRnd.nodes[n]["gender"] = dolphinsGenderSort[g, 1]
@@ -189,10 +193,18 @@ plt.figure()
 plt.hist(ratioEdgesRndGender, bins=40)
 plt.title('',fontsize=TitleSize)
 plt.ylabel('Frecuencia',fontsize=AxisLabelSize)
-plt.xlabel('Fraccion de enlaces que vinculan generos diferentes',fontsize=AxisLabelSize)
+plt.xlabel('Proporcion de enlaces que vinculan generos diferentes',fontsize=AxisLabelSize)
 #plt.grid()
 plt.tight_layout()
 plt.show()
+
+#calculo la probabilidad de que la proporcion de enlaces entre generos distintos sea tan o mas extrema que la observada para la red de estudio considerando que HO es verdadera (considerando como distribucion nula a la generada por permutar los sexos de los delfines, dejando inalterada la topologia de la red)
+
+p_value=sum(i >= ratioEdgesGender for i in ratioEdgesRndGender)/number_of_iter
+p_value
+
+#este p-valor estaria indicando que la red tiene una proporcion de enlaces entre generos distintos mucho menor que lo esperado por azar 
+#por ende, es homofilica!
 
 #calculo la media y el desvio estadar para la fraccion de enlaces de la dist nula
 pop_mu=np.mean(ratioEdgesRndGender)
@@ -204,25 +216,15 @@ probM=(dolphinsGender[:,1]=='m').sum()/nodesTot
 pronNA=(dolphinsGender[:,1]=='na').sum()/nodesTot
 
 #esto siguiente valdria si no tuviesemos la categoria 'na'
-#estimo la media y la var de la fraccion de enlaces entre generos diferentes en una red en la cual no tengo en cuenta la topologia de la misma
+#estimo la media y la var de la fraccion de enlaces entre generos diferentes en una red en la cual no tengo en cuenta la topologia de la misma (propuesto en las diapos clase)
 true_mu=2*probF*probM
 true_var=true_mu*(1-true_mu)
 
-#los datos de nuestra muestra/red de estudio, los '1's representan enlaces entre generos diferentes y los '0's entre el mismo genero
-datadolphins=np.asarray([1]*63+[0]*96)
+#hago un test-z para proporciones para obtener una significancia estadisticas
+from statsmodels.stats.proportion import proportions_ztest
 
-#test t de student, prueba a 2 colas 
-#haciendo aqui el test-t de student asumo que la media de la fraccion de enlaces entre generos diferentes sigue una distribucion normal, lo cual podria no ser cierto
-
-ttest1 = sp.stats.ttest_1samp(datadolphins, pop_mu)
-#rechazaria HO
-ttest2 = sp.stats.ttest_1samp(datadolphins, true_mu)
-#no rechazaria HO
-
-
-
-import statsmodels.api as sm
-    
+proportions_ztest(edgesxyGender, edgesTot, true_mu, 'two-sided', true_var)
+   
 sm.qqplot(np.asarray(ratioEdgesRndGender), line='45')
 pylab.show()
 sp.stats.shapiro(np.asarray(ratioEdgesRndGender))
@@ -246,6 +248,20 @@ sp.stats.shapiro(np.asarray(ratioEdgesRndGender))
 #    if G.node[u]['color'] != G.node[v]['color']:
 #        print (u,v)
 # =============================================================================
+
+'''
+#los datos de nuestra muestra/red de estudio, los '1's representan enlaces entre generos diferentes y los '0's entre el mismo genero
+datadolphins=np.asarray([1]*63+[0]*96)
+
+#test t de student, prueba a 2 colas 
+#haciendo aqui el test-t de student asumo que la media de la fraccion de enlaces entre generos diferentes sigue una distribucion normal, lo cual podria no ser cierto
+
+ttest1 = sp.stats.ttest_1samp(datadolphins, pop_mu)
+#rechazaria HO
+ttest2 = sp.stats.ttest_1samp(datadolphins, true_mu)
+#no rechazaria HO
+'''
+
 
 #%%
 
