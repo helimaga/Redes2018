@@ -13,7 +13,7 @@ from scipy import stats
 from matplotlib import pylab
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
-pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TC01/tc01_data/'
+pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/Redes2018/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
 path = pathHeli
