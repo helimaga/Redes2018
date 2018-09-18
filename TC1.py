@@ -1,8 +1,12 @@
 '''
-Trabajo Computacional 1
+Trabajo Computacional TC_01
 
+Heli Magali Alvarez
+Santiago Scheiner
+Juan Ignacio Gossn
 '''
-#%%
+#%% Bloque de inicializacion
+# Importamos todos los modulos que necesitaremos para el trabajo
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -12,17 +16,24 @@ import scipy as sp
 from scipy import stats
 from matplotlib import pylab
 from sklearn.linear_model import LinearRegression
+import random
+import matplotlib.patches as mpatches
+from statsmodels.stats.proportion import proportions_ztest
+import collections
+import igraph
 
-pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los archivos estén en otra carpeta.
+# Seleccion de path segun maquina de trabajo
+
+pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/'
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
+pathDocente = '?'
 
 path = pathJuancho
 
-plt.close('all')
 
-#%%
-# Configuraciones para los gráficos:
+# Configuraciones para los graficos:
+plt.close('all')
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
@@ -33,8 +44,9 @@ NumberSize=12
 LabelSize=8 # etiquetas de los nodos
 NodeSize=50 # tamaño de los nodos
 
+# Definicion de funcion de lectura de las tablas
 def ldata(archivo):
-    # función de lectura de las tablas
+
     f=open(archivo)
     data=[]
     for line in f:
@@ -43,7 +55,7 @@ def ldata(archivo):
         data.append(col)	
     return data
 
-#%% Ejercicio 1
+#%% Ej. 1
 
 '''
 1) Considere las tres redes de interacción de proteínas relevadas para levadura disponibles en la
@@ -51,7 +63,7 @@ página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H
 a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
 obtenidas del Yeast Interactome Database.
 '''
-# Ejercicio 1: Cargar datos
+# Cargar datos
 
 redesStr = ['Y2H','AP-MS','LIT']
 redes = {}
@@ -65,10 +77,18 @@ for s in redesStr:
 Presente una comparación gráfica de las 3 redes.
 '''
 
+fig, axs = plt.subplots(1,len(redesStr))
+axs = axs.ravel()
+sp = -1
 for s in redesStr:
-	plt.figure()
-	nx.draw(redes[s], with_labels=True, font_weight='bold',font_size=LabelSize,node_size=NodeSize)
-	plt.show()
+    sp += 1
+
+    plt.sca(axs[sp])
+    # draw all nodes homogeneously, and edge weights as filtered
+    nx.draw(redes[s], with_labels=False, node_size=3, axs=axs[sp])
+
+    axs[sp].set_title(s, fontsize=10)
+    axs[sp].set_axis_off()
 
 #%% Ej. 1(b)
 '''
@@ -82,71 +102,89 @@ vi. Los coeficientes de clustering <Ci> y C_delta de la red.
 vii. Diámetro de la red.
 '''
 
+# Armamos un dataframe, correspondiente al modulo "pandas"
 df1b = pd.DataFrame()
 
 for s in redesStr:
-	df1b.ix[s,'Nodes'] = redes[s].number_of_nodes()
-	df1b.ix[s,'Edges'] = redes[s].number_of_edges()
-	if len(redes[s]) == len(np.unique(redes[s],axis=0)):
-		df1b.ix[s,'Directionality'] = 'Prob-Undir'
+    # i
+	df1b.loc[s,'Nodes'] = redes[s].number_of_nodes()
+    # ii
+	df1b.loc[s,'Edges'] = redes[s].number_of_edges()
+	# iii
+    if len(redes[s]) == len(np.unique(redes[s],axis=0)):
+		df1b.loc[s,'Directionality'] = 'Prob-Undir'
 	else:
-		df1b.ix[s,'Directionality'] = 'Dir'
+		df1b.loc[s,'Directionality'] = 'Dir'
+    # iv
 	netDeg = np.array(list(redes[s].degree()))
 	netDeg = netDeg[:,1]
 	netDeg = netDeg.astype(int)
-	df1b.ix[s,'DegMean'] = np.mean(netDeg)
-	df1b.ix[s,'DegMin'] = np.min(netDeg)
-	df1b.ix[s,'DegMax'] = np.max(netDeg)
-	df1b.ix[s,'DegDensity'] = nx.density(redes[s])
-	df1b.ix[s,'ClustGlob'] = nx.transitivity(redes[s])
-	df1b.ix[s,'ClustLoc'] = nx.average_clustering(redes[s]) # corroborar que es equiv a tomar promedio de f
+	df1b.loc[s,'DegMean'] = np.mean(netDeg)
+	df1b.loc[s,'DegMin'] = np.min(netDeg)
+	df1b.loc[s,'DegMax'] = np.max(netDeg)
+    # v
+	df1b.loc[s,'DegDensity'] = nx.density(redes[s])
+    # vi
+	df1b.loc[s,'ClustGlob'] = nx.transitivity(redes[s])
+	df1b.loc[s,'ClustLoc'] = nx.average_clustering(redes[s])
+    # vii Dado que las redes son disconexas, estimamos el diametro de la componente gigante
 	giant = max(nx.connected_component_subgraphs(redes[s]), key=len)
-    # len es el numero de nodos
-	df1b.ix[s,'Diameter'] = nx.diameter(giant)
-    
-#a = nx.connected_component_subgraphs(redes[s])
-#nx.diameter(giant)
+	df1b.loc[s,'Diameter'] = nx.diameter(giant)
+
+print(df1b)
+
 #%% Ej. 1(c)
-
+'''
+Teniendo en cuenta la naturaleza de las interacciones reportadas, diga si es razonable lo
+que encuentra para ciertos observables calculados.
+'''
 #%% Ej. 1(d)
-
+'''
+Construya un diagrama de Venn que permita reconocer la cobertura, especificidad y
+coherencia de las interacciones reportadas por los tres datasets
+'''
 #%% Ej. 2
-
 '''
-2) Considere la red social de 62 delfines de Nueva Zelanda
+Considere la red social de 62 delfines de Nueva Zelanda
 '''
 
-dolphins = nx.read_gml(path + 'dolphins.gml')
-dolphinsGender = np.char.lower(np.array(ldata(path+'dolphinsGender.txt')))
+# Cargar datos
 
-dolphinsSIndex = dolphinsGender[:, 0].argsort()
-dolphinsGenderSort=dolphinsGender[dolphinsSIndex]
+dolphins = nx.read_gml(path + 'dolphins.gml') # red
+dolphinsGender = np.char.lower(np.array(ldata(path+'dolphinsGender.txt'))) # numpy array con los generos
 
-for n,g in zip(dolphins,range(len(dolphinsGenderSort))):
-    dolphins.nodes[n]["gender"] = dolphinsGenderSort[g, 1]
- 
-dolphins.nodes("gender")
+# En este loop, identificamos el genero de cada delfin nodo por nodo:
+for n in dolphins.nodes():
+    dolphins.nodes[n]["gender"] = dolphinsGender[dolphinsGender[:,0]==n.lower(),1][0]
 
+# Para corroborar, hacemos un print del cada nodo con su respectivo genero
+print(dolphins.nodes("gender"))
 
-#%% 2a
-
+#%% Ej. 2(a)
 '''
 Examine las diferentes opciones de layout para este grafo e identifique la que le resulte
 mas informativa. Justifique su eleccion detallando las caracteristicas estructurales
 de la red que su eleccion pone en evidencia. Incluya en la representacion grafica de la
 red informacion sobre el sexo de los delfines. 
 '''
+
 plt.figure()
-nx.draw(dolphins, 
-        width=5, 
+nx.draw(dolphins,
+        width=1,
+        edge_color = 'c',
         node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphins, "gender").values()], 
-        node_size=400,
+        node_size=80,
         font_size=20,
-        with_labels=True
+        with_labels=True,
        )
+male = mpatches.Patch(color='b', label='Male')
+female = mpatches.Patch(color='r', label='Female')
+unknown = mpatches.Patch(color='y', label='Unknown')
+plt.legend(handles=[male,female,unknown])
+plt.suptitle('Red Delfines')
 plt.show()
 
-#%% 2b
+#%% Ej. 2(b)
 
 '''
 Se trata de una red en la cual prevalece la homofilia en la variable genero?
@@ -156,57 +194,98 @@ ii.A partir de lo obtenido proponga una estimacion para el valor y el error de d
 Compare su estimacion con el valor medio esperado.
 iii.Estime la significancia estadistica del valor observado en el caso de la red real
 '''
-#acá hay un temita con respecto a cómo considerar a los 'na', por el momento si hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de generos diferentes
-#primero cuento los enlaces entre géneros diferentes
+# Acá hay un temita con respecto a cómo considerar los 'na', por el momento si
+# hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de
+# generos diferentes primero cuento los enlaces entre géneros diferentes
 
-edgesxyGender=0
+naNum = np.sum(dolphinsGender[:,1]=='na')
+naGenderPos = list(itertools.product(['m','f'], repeat=naNum))
 
-for (u,v) in dolphins.edges():
-    if dolphins.node[u]['gender'] != dolphins.node[v]['gender']:
-        print (u,v)
-        edgesxyGender+=1
+edgesHeteroRatioRndNa = []
+pValNa = []
+for iterNa in range(0,len(naGenderPos)):
+    dolphinsNa = dolphins.copy()
+    na0=-1
+    for n in dolphins.nodes():
+        nGender = dolphinsGender[dolphinsGender[:,0]==n.lower(),1][0]
+        if nGender=='na':
+            na0+=1
+            nGender = naGenderPos[iterNa][na0]
+        dolphinsNa.nodes[n]["gender"] = nGender
+    
+    edgesHetero=0
+    
+    for (e0,e1) in dolphins.edges():
+        if dolphins.node[e0]['gender'] != dolphins.node[e1]['gender']:
+            edgesHetero+=1
+    
+    nodesTot=dolphins.number_of_nodes()
+    edgesTot=dolphins.number_of_edges()
+    
+    #aca calculo la fraccion de enlaces entre generos diferentes para la red de estudio
+    edgesHeteroRatio=edgesHetero/edgesTot
+    
+    #estrategia 1: permutacion 
+    
+    #luego hago 1000 asignaciones al azar del género a la red dolphinsrnd
+    dolphinsRnd=dolphinsNa.copy()
+    dolphinsGenderRnd = dolphinsGender
+    edgesHeteroRatioRnd=[]
+    numiter=10000
+    
+    
+    for i in range(numiter):
+        dolphinsGenderRnd[:,1] = random.sample(list(dolphinsGender[:,1]), nodesTot)
+        for n in dolphinsRnd.nodes():
+            dolphinsRnd.nodes[n]["gender"] = dolphinsGenderRnd[dolphinsGenderRnd[:,0]==n.lower(),1][0]
+        edgesHeteroRnd=0
+        for (e0,e1) in dolphinsRnd.edges():
+            if dolphinsRnd.node[e0]['gender'] != dolphinsRnd.node[e1]['gender']:
+                edgesHeteroRnd+=1
+        edgesHeteroRatioRnd.append(edgesHeteroRnd/edgesTot)
 
-nodesTot=dolphins.number_of_nodes()
-edgesTot=dolphins.number_of_edges()
 
-#aca calculo la fraccion de enlaces entre generos diferentes para la red de estudio
-ratioEdgesGender=edgesxyGender/edgesTot
+    # Calculamos la probabilidad de que la proporcion de enlaces entre generos 
+    # distintos sea tan o mas extrema que la observada para la red de estudio 
+    # considerando que HO es verdadera (considerando como distribucion nula a la 
+    # generada por permutar los sexos de los delfines, dejando inalterada la 
+    # topologia de la red)
 
-#ESTRATEGIA 1: PERMUTACION 
+    pVal=1-sum(i >= edgesHeteroRatio for i in edgesHeteroRatioRnd)/number_of_iter
+    pValNa.append(pVal)
+    edgesHeteroRatioRndNa.append(edgesHeteroRatioRnd)
+edgesHeteroRatioRndNa = np.array(edgesHeteroRatioRndNa)
 
-#luego hago 1000 asignaciones al azar del género a la red dolphinsRnd
-dolphinsRnd=dolphins.copy()
-ratioEdgesRndGender=[]
-number_of_iter=10000
-
-for i in range(number_of_iter):
-    np.random.shuffle(dolphinsGenderSort[:,1])
-    for n,g in zip(dolphinsRnd,range(len(dolphinsGenderSort))):
-        dolphinsRnd.nodes[n]["gender"] = dolphinsGenderSort[g, 1]
-    edgesxyRndGender=0
-    for (u,v) in dolphinsRnd.edges():
-        if dolphinsRnd.node[u]['gender'] != dolphinsRnd.node[v]['gender']:
-            edgesxyRndGender+=1
-    ratioEdgesRndGender.append(edgesxyRndGender/edgesTot)
-
-#ploteo la distribucion nula (random) para la fraccion de enlaces entre generos diferentes
-plt.figure()
-plt.hist(ratioEdgesRndGender, bins=40)
-plt.title('',fontsize=TitleSize)
-plt.ylabel('Frecuencia',fontsize=AxisLabelSize)
-plt.xlabel('Proporcion de enlaces que vinculan generos diferentes',fontsize=AxisLabelSize)
-#plt.grid()
+# Estos p-valores estarian indicando que la red tiene una proporcion de enlaces 
+# entre generos distintos mucho menor que lo esperado por azar por ende, es 
+# homofilica. Esto se mantiene asi para todas las posibles asignaciones de 
+# generos de los delfines cuyo genero no fue definido.
+pValNa = np.array(pValNa)
+#%%
+fig, axs = plt.subplots(nrows=4,ncols=4)
 plt.tight_layout()
+axs = axs.ravel()
+for iterNa in range(0,len(naGenderPos)):
+    # graficamos la distribucion nula (random) para la fraccion de enlaces entre 
+    # generos diferentes
+    plt.sca(axs[iterNa])
+    plt.hist(edgesHeteroRatioRndNa[iterNa,:], bins=40)
+    plt.axvline(edgesHeteroRatio, color='k', linestyle='dashed', linewidth=1, label='fraccion original')
+    if iterNa == 0:
+        plt.legend()
+        plt.ylabel('frecuencia',fontsize=10)
+        plt.xlabel('fraccion de enlaces heterofilicos',fontsize=10)
+    plt.title('p-value: ' + str(pValNa[iterNa]) + '[' + str(naGenderPos[iterNa]) + ']',fontsize=10)
+    plt.tight_layout()
+    plt.xlim(0,1)
+    axs[iterNa].invert_xaxis()
+
+    
+
+    
+
 plt.show()
-
-#calculo la probabilidad de que la proporcion de enlaces entre generos distintos sea tan o mas extrema que la observada para la red de estudio considerando que HO es verdadera (considerando como distribucion nula a la generada por permutar los sexos de los delfines, dejando inalterada la topologia de la red)
-
-p_value=sum(i >= ratioEdgesGender for i in ratioEdgesRndGender)/number_of_iter
-p_value
-
-#este p-valor estaria indicando que la red tiene una proporcion de enlaces entre generos distintos mucho menor que lo esperado por azar 
-#por ende, es homofilica!
-
+#%%
 #calculo la media y el desvio estadar para la fraccion de enlaces de la dist nula
 pop_mu=np.mean(ratioEdgesRndGender)
 pop_std=np.std(ratioEdgesRndGender)
@@ -222,9 +301,9 @@ true_mu=2*probF*probM
 true_var=true_mu*(1-true_mu)
 
 #hago un test-z para proporciones para obtener una significancia estadisticas
-from statsmodels.stats.proportion import proportions_ztest
 
-proportions_ztest(edgesxyGender, edgesTot, true_mu, 'two-sided', true_var)
+
+proportions_ztest(edgesHetero, edgesTot, true_mu, 'two-sided', true_var)
    
 sm.qqplot(np.asarray(ratioEdgesRndGender), line='45')
 pylab.show()
@@ -264,47 +343,123 @@ ttest2 = sp.stats.ttest_1samp(datadolphins, true_mu)
 '''
 
 
-#%%
+#%% Ej. 2(c)
+'''
+Identifique alguna metodología basada en observables topológicos para eliminar
+nodos secuencialmente de la red de manera de dividirla en dos componentes de tamaños
+comparables en el menor número de pasos. Explique y muestre los resultados obtenidos.
+Intente cuantificar su estrategia comparándola con lo que se obtendría al eliminar nodos
+de manera aleatoria.
+'''
 
-# Identifique alguna metodología basada en observables topológicos para eliminar
-# nodos secuencialmente de la red de manera de dividirla en dos componentes de tamaños
-# comparables en el menor número de pasos. Explique y muestre los resultados obtenidos.
-# Intente cuantificar su estrategia comparándola con lo que se obtendría al eliminar nodos
-# de manera aleatoria.
+# La estrategia sera ir eliminando en cada paso aquel nodo que resulte ser el 
+# que constituya parte de la mayor cantidad de "caminos mas cortos posibles" 
+# entre dos nodos cualesquiera. Dicha iteracion concluira una vez que la red se 
+# halle disconexa. 
+# Es esperable que dicha estrategia corte rapidamente la red, aunque debe 
+# notarse que esto no garantiza generalmente que las componentes disconexas 
+# resulten ser dos de tamaños comparables, por ejemplo no ocurriria asi si el 
+# grafo fuera una estrella.
 
-dolphinsSplit = dolphins.copy()
-edges = list(dolphins.edges())
-for ed in edges:
-    edGender = (dolphins.nodes[ed[0]]['gender'],dolphins.nodes[ed[1]]['gender'])
-    edGender = sorted(edGender, key=str.lower)
-    if (edGender == ['f','m']) | (edGender == ['m','na']):
-        dolphinsSplit.remove_edge(*ed)
-            
+nx.transitivity(dolphins)
+dolphinsCut = dolphins.copy()
+
+node2extract=[]
+while nx.is_connected(dolphinsCut):
+    shortPaths = nx.shortest_path(dolphinsCut)
+    numShortPaths = dict((n,0) for n in dolphinsCut.nodes())
+    for n1 in dolphinsCut.nodes():
+        for n2 in dolphinsCut.nodes():
+            shortPathList = shortPaths[n1][n2][1:-1]
+            for n in dolphinsCut.nodes():
+                if n in shortPathList:
+                    numShortPaths[n] = numShortPaths[n]+1
+    node2extract.append(max(numShortPaths, key=numShortPaths.get))
+    dolphinsCut.remove_node(node2extract[-1])
+
+# Ilustramos el resultado con dicho metodo
+dolphinNet = [dolphins,dolphinsCut]
+fig, axs = plt.subplots(1,2)
+axs = axs.ravel()
+for sp in range(0,2):
+    plt.sca(axs[sp])
+    nx.draw(dolphinNet[sp],
+            width=1,
+            edge_color = 'c',
+            node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphinNet[sp], "gender").values()], 
+            node_size=80,
+            font_size=10,
+            with_labels=True,
+           )
+    male = mpatches.Patch(color='b', label='Male')
+    female = mpatches.Patch(color='r', label='Female')
+    unknown = mpatches.Patch(color='y', label='Unknown')
+    plt.suptitle('Subtracted nodes: ' ': ' + str(node2extract) + ' (' + str(len(node2extract)) + ' steps)')
+    if sp==0:
+        plt.title('Original Network')
+    elif sp==1:
+        plt.title('Cut Network')
+        plt.legend(handles=[male,female,unknown])
+plt.show()
+
+# Ahora, compararemos con el numero de pasos requeridos al extraer nodos 
+# aleatorios. Notese que, para conservar la condicion de separar la red en 
+# grafos de tamano comparable, dicha aleatoriedad sera restringida por 
+# la condicion de que ninguno de los subgrafos resultantes contenga menos de 10
+# nodos. Es decir, se rechazara la eliminacion de nodos perifericos que separen
+# a la red en un bloque muy grande y otro muy pequeno.
+
+R = 150
+numNodes = []
+for r in range(0,R):
+    dolphinsCut = dolphins.copy()
+    node2extract2=[]
+    thresh=0
+    try:
+        while nx.is_connected(dolphinsCut):
+            candidate = random.choice(list(dolphinsCut.nodes()))
+            dolphinsCutCand = dolphinsCut.copy()
+            dolphinsCutCand.remove_node(candidate)
+            subGr = list(nx.connected_component_subgraphs(dolphinsCutCand))
+            if len(subGr)>1 and len(min(subGr,key=len))<5 and thresh<10:
+                thresh+=1
+                continue
+            else:
+                thresh=0
+                node2extract2.append(candidate)
+                dolphinsCut = dolphinsCutCand.copy()
+        numNodes.append(len(node2extract2))
+    except:
+        continue
+# Graficamos el histograma resultante y comparamos con el metodo anterior
 plt.figure()
-nx.draw(dolphinsSplit, 
-        width=2, 
-        node_color=["blue" if g=="m" else ("red" if g=="f" else "yellow") for g in nx.get_node_attributes(dolphins, "gender").values()], 
-        node_size=40,
-        font_size=5,
-        with_labels=True
-       )
+plt.hist(numNodes, bins=20, color='g', edgecolor='k', label='Random node removal')
+plt.axvline(4, color='k', linestyle='dashed', linewidth=1, label='Bridge node removal')
+plt.axvline(len(dolphins.nodes()), color='c', linestyle='dashed', linewidth=1, label='Total number of nodes')
+plt.legend()
+plt.xlabel('Number of nodes')
+plt.ylabel('Occurence')
+plt.show()
 
-
-
+# Se observa que el numero de nodos a extraer es siempre superior en el caso
+# aleatorio.
+#%% Ej. 3
 '''
-1) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los sistemas autónomos de internet relevada a mediados de 2006.
+1) Considere la red as-22july06.gml creada por Mark Newman que contiene la
+ estructura de los sistemas autónomos de internet relevada a mediados de 2006.
 '''
+
+# Cargar datos
 
 Newman = nx.read_gml(path + 'as-22july06.gml')
 
-#%% 3a
+#%% Ej. 3(a)
 '''
 a) Encuentre gráficamente la distribución de grado P_k como función de k explorando
 diferentes alternativas: un bineado lineal o logarítmico, utilizando escalas logarítmicas o
 lineales en uno o ambos ejes. Discuta que alternativa permite apreciar mejor el carácter
 libre de escala de dicha distribución.
 '''
-import collections
 
 degree_sequence = sorted([d for n, d in Newman.degree()], reverse=True)  # Se arma la sucesión de los grados (ordenada).
 degreeCount = collections.Counter(degree_sequence) # Se cuenta cuántos nodos hay con cada grado.
@@ -353,7 +508,7 @@ plt.show()
 '''
 b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución.
 '''
-import igraph
+
 
 # fit_power_law fits a power-law distribution to a data set. 
 #fit_power_law(x, xmin = NULL, start = 2, force.continuous = FALSE, implementation = c("plfit", "R.mle"))
