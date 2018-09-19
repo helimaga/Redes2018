@@ -17,7 +17,7 @@ pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/' # en caso de que los ar
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
-path = pathJuancho
+path = pathSanti
 
 plt.close('all')
 
@@ -411,7 +411,7 @@ anterior? A qué se debe?
 b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
 que observa en cuanto a la asortatividad reportada?
 '''
-#%% Leer redes
+#%% i. Leer redes
 
 redesStr = ['netscience','as-22july06']
 redes = {}
@@ -435,7 +435,7 @@ for k in avnd.keys():
 degreeAvnd = d.values()
 degreeAvnd = np.array(list(degreeAvnd))
 
-#%% Grafico
+#%% ii y iii. Gráfico y ajuste:
 
 # x from 0 to 30
 
@@ -460,12 +460,13 @@ logy_new = model.predict(logx_new[:, np.newaxis])
 plt.figure()
 plt.plot(x, y,'.k')
 plt.plot(10**logx_new, 10**logy_new,'r')
-plt.xlabel('Degree, k')
-plt.ylabel('Avergage degree of neighbors, knn')
+plt.xlabel(r'Degree, ($k$)')
+plt.ylabel(r'Avergage degree of neighbors, ($k_{nn}$)')
 plt.xscale('log')
 plt.yscale('log')
 
-
 plt.show()
 
-#%%
+#%% iv. Estimador de Newman:
+
+
