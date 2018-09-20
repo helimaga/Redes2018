@@ -6,7 +6,7 @@ Santiago Scheiner
 Juan Ignacio Gossn
 '''
 #%% Bloque de inicializacion
-# Importamos todos los modulos que necesitaremos para el trabajo
+# Importamos todos los modulos que necesitaremos para el trabajo:
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -22,12 +22,15 @@ from statsmodels.stats.proportion import proportions_ztest
 import collections
 import igraph
 
-# Seleccion de path segun maquina de trabajo
+# Seleccion de path según la máquina de trabajo:
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/'
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
+
 pathDocente = '?'
+
+#########
 
 path = pathSanti
 
@@ -44,7 +47,8 @@ NumberSize=12
 LabelSize=8 # etiquetas de los nodos
 NodeSize=50 # tamaño de los nodos
 
-# Definicion de funcion de lectura de las tablas
+# Definición de función de lectura de las tablas:
+
 def ldata(archivo):
 
     f=open(archivo)
@@ -112,7 +116,7 @@ for s in redesStr:
 	df1b.loc[s,'Edges'] = redes[s].number_of_edges()
 	# iii
     if len(redes[s]) == len(np.unique(redes[s],axis=0)):
-		df1b.loc[s,'Directionality'] = 'Prob-Undir'
+        df1b.loc[s,'Directionality'] = 'Prob-Undir'
 	else:
 		df1b.loc[s,'Directionality'] = 'Dir'
     # iv
@@ -445,7 +449,7 @@ plt.show()
 # aleatorio.
 #%% Ej. 3
 '''
-1) Considere la red as-22july06.gml creada por Mark Newman que contiene la
+3) Considere la red as-22july06.gml creada por Mark Newman que contiene la
  estructura de los sistemas autónomos de internet relevada a mediados de 2006.
 '''
 
@@ -532,42 +536,6 @@ o por el contrario suelen conectarse a nodos de bajo grado? (i.e la red es asort
 disortativa respecto al grado?).
 '''
 
-
-'''
-i. Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos.
-[hint R: se puede estimar primero el grado medio de los vecinos de cada nodo de
-la red y luego utilizar aggregate sobre esos datos, que permite estimar cantidades
-sobre subconjuntos determinados de datos de acuerdo a diferentes criterios]
-'''
-
-'''
-ii. Analizar la tendencia observada en un gráfico que consigne dicho valor k nn (k)
-como función del grado.
-
-'''
-
-'''
-iii.Asumiendo que k_nn (k) = ak^μ , estime el exponente de correlación a partir de
-realizar una regresión de log k_nn ~ log k. Asegurese de graficar el fiteo en el
-grafico anterior. [hint R: lm permite hacer regresiones lineales]
-'''
-
-'''
-iv. Considere la red de colaboraciones y la de internet nuevamente Encuentre
-cuantitativamente la asortatividad de la red utilizando ahora el estimador
-propuesto por Newman (ver PDF).
-Para ello tenga encuenta lo desarrollado en las eqs [8.26 – 8.29] del libro de
-Newman.Como se corresponde este coeficiente con el estimado en el punto
-anterior? A qué se debe?
-'''
-
-#%%
-'''
-b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
-que observa en cuanto a la asortatividad reportada?
-'''
-#%% i. Leer redes
-
 redesStr = ['netscience','as-22july06']
 redes = {}
 avnd = {}
@@ -578,9 +546,13 @@ degreeAvnd = {}
 for s in redesStr: # cambiar!!!
 	redes[s] = nx.read_gml(path + s + '.gml')
 
-nodes = redes[s].nodes()
-avnd = nx.average_neighbor_degree(redes[s])
-degree0 = redes[s].degree()
+'''
+i. Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos.
+'''
+
+nodes = redes[s].nodes()    # nombres de los nodos
+avnd = nx.average_neighbor_degree(redes[s])     # diccionario con el grado promedio de los vecinos de cada nodo.
+degree0 = redes[s].degree()     # grado de cada nodo.
 
 ds = [dict(degree0), avnd]
 d = {}
@@ -590,7 +562,14 @@ for k in avnd.keys():
 degreeAvnd = d.values()
 degreeAvnd = np.array(list(degreeAvnd))
 
-#%% ii y iii. Gráfico y ajuste:
+#%%
+'''
+ii. Analizar la tendencia observada en un gráfico que consigne dicho valor k nn (k)
+como función del grado.
+iii.Asumiendo que k_nn (k) = ak^μ , estime el exponente de correlación a partir de
+realizar una regresión de log k_nn ~ log k. Asegurese de graficar el fiteo en el
+grafico anterior. [hint R: lm permite hacer regresiones lineales]
+'''
 
 # x from 0 to 30
 
@@ -622,6 +601,64 @@ plt.yscale('log')
 
 plt.show()
 
-#%% iv. Estimador de Newman:
+#%%
+'''
+iv. Considere la red de colaboraciones y la de internet nuevamente Encuentre
+cuantitativamente la asortatividad de la red utilizando ahora el estimador
+propuesto por Newman (ver PDF).
+Para ello tenga encuenta lo desarrollado en las eqs [8.26 – 8.29] del libro de
+Newman.Como se corresponde este coeficiente con el estimado en el punto
+anterior? A qué se debe?
+'''
+
+# Se arma un vector 'netDeg4' con los grados de cada nodo:
+netDeg4 = np.array(list(redes[s].degree()))
+netDeg4Grados = netDeg4[:,1]    # Lista de strings con los grados de cada nodo.
+netDeg4Grados = netDeg4Grados.astype(int) # Lista de ints con los grados de cada nodo.
+
+# Ver: networkx.algorithms.neighbor_degree.k_nearest_neighbors(G, nodes=None, weighted=False)
+
+# Usando el método del libro (Newman, ecuaciones 8.29-8.29):
+
+S1=sum(netDeg4Grados)
+S2=sum(netDeg4Grados**2)
+S3=sum(netDeg4Grados**3)
+
+nodos=list(redes[s].nodes())    # Lista de los nodos (strings).
+#nodos=[int(i) for i in nodes]   # Lista de los nodos (ints).
+
+#for n in nodos:
+#    redes[s].nodes[n]['degree'] = netDeg4Grados[n]
+
+# CORREGIR LO QUE SIGUE:
 
 
+
+suma=0
+for x in list(redes[s].edges(i)): # Se recorren todos los enlaces de la red.
+    nodoI = x[0]
+    nodoJ = x[1]
+    
+    ki=redes[s].degree(nodoI)
+    kj=redes[s].degree(nodoJ)
+    
+    suma = suma + ki*kj
+
+Se=2*suma # No sé si hace falta esto, porque en la suma los enlaces aparecen dos veces ya: (A,B) y (B,A).
+
+
+
+# Falta el factor 2 en la suma de arriba.
+
+rNewman=(S1*Se-S2**2)/(S1*S3-S2**2)
+print('Coeficiente de correlación (Newman):\nr= ',rNewman)
+
+rNX=nx.degree_assortativity_coefficient(redes[s])
+print('Coeficiente de correlación (Newman):\nr= ',rNX)
+
+
+#%%
+'''
+b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
+que observa en cuanto a la asortatividad reportada?
+'''
