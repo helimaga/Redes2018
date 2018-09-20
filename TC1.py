@@ -616,46 +616,33 @@ netDeg4 = np.array(list(redes[s].degree()))
 netDeg4Grados = netDeg4[:,1]    # Lista de strings con los grados de cada nodo.
 netDeg4Grados = netDeg4Grados.astype(int) # Lista de ints con los grados de cada nodo.
 
-# Ver: networkx.algorithms.neighbor_degree.k_nearest_neighbors(G, nodes=None, weighted=False)
-
 # Usando el método del libro (Newman, ecuaciones 8.29-8.29):
 
 S1=sum(netDeg4Grados)
 S2=sum(netDeg4Grados**2)
 S3=sum(netDeg4Grados**3)
 
-nodos=list(redes[s].nodes())    # Lista de los nodos (strings).
-#nodos=[int(i) for i in nodes]   # Lista de los nodos (ints).
-
-#for n in nodos:
-#    redes[s].nodes[n]['degree'] = netDeg4Grados[n]
-
-# CORREGIR LO QUE SIGUE:
-
-
 
 suma=0
-for x in list(redes[s].edges(i)): # Se recorren todos los enlaces de la red.
+for x in list(redes[s].edges()): # Se recorren todos los enlaces de la red.
     nodoI = x[0]
     nodoJ = x[1]
     
-    ki=redes[s].degree(nodoI)
-    kj=redes[s].degree(nodoJ)
+    k_i=redes[s].degree(nodoI)
+    k_j=redes[s].degree(nodoJ)
     
-    suma = suma + ki*kj
+    suma = suma + k_i*k_j
 
-Se=2*suma # No sé si hace falta esto, porque en la suma los enlaces aparecen dos veces ya: (A,B) y (B,A).
+Se=2*suma
 
-
-
-# Falta el factor 2 en la suma de arriba.
 
 rNewman=(S1*Se-S2**2)/(S1*S3-S2**2)
 print('Coeficiente de correlación (Newman):\nr= ',rNewman)
 
 rNX=nx.degree_assortativity_coefficient(redes[s])
-print('Coeficiente de correlación (Newman):\nr= ',rNX)
+print('Coeficiente de correlación (función de Networkx):\nr= ',rNX)
 
+# Falta comparar con el punto anterior.
 
 #%%
 '''
