@@ -1,7 +1,7 @@
 '''
 Trabajo Computacional TC_01
 
-Heli Magali Alvarez
+Heli Magali Garcia Alvarez
 Santiago Scheiner
 Juan Ignacio Gossn
 '''
@@ -20,7 +20,8 @@ import random
 import matplotlib.patches as mpatches
 from statsmodels.stats.proportion import proportions_ztest
 import collections
-import igraph
+import jgraph
+import itertools
 
 # Seleccion de path según la máquina de trabajo:
 
@@ -30,9 +31,13 @@ pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 
 pathDocente = '?'
 
+<<<<<<< HEAD
 #########
 
 path = pathSanti
+=======
+path = pathHeli
+>>>>>>> Cambios en el plot del 2b
 
 
 # Configuraciones para los graficos:
@@ -198,6 +203,7 @@ ii.A partir de lo obtenido proponga una estimacion para el valor y el error de d
 Compare su estimacion con el valor medio esperado.
 iii.Estime la significancia estadistica del valor observado en el caso de la red real
 '''
+
 # Acá hay un temita con respecto a cómo considerar los 'na', por el momento si
 # hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de
 # generos diferentes primero cuento los enlaces entre géneros diferentes
@@ -216,7 +222,7 @@ for iterNa in range(0,len(naGenderPos)):
             na0+=1
             nGender = naGenderPos[iterNa][na0]
         dolphinsNa.nodes[n]["gender"] = nGender
-    
+   
     edgesHetero=0
     
     for (e0,e1) in dolphins.edges():
@@ -231,12 +237,11 @@ for iterNa in range(0,len(naGenderPos)):
     
     #estrategia 1: permutacion 
     
-    #luego hago 1000 asignaciones al azar del género a la red dolphinsrnd
+    #luego hago 10000 asignaciones al azar del género a la red dolphinsrnd
     dolphinsRnd=dolphinsNa.copy()
     dolphinsGenderRnd = dolphinsGender
     edgesHeteroRatioRnd=[]
     numiter=10000
-    
     
     for i in range(numiter):
         dolphinsGenderRnd[:,1] = random.sample(list(dolphinsGender[:,1]), nodesTot)
@@ -255,38 +260,40 @@ for iterNa in range(0,len(naGenderPos)):
     # generada por permutar los sexos de los delfines, dejando inalterada la 
     # topologia de la red)
 
-    pVal=1-sum(i >= edgesHeteroRatio for i in edgesHeteroRatioRnd)/number_of_iter
+    pVal=1-sum(i >= edgesHeteroRatio for i in edgesHeteroRatioRnd)/numiter
     pValNa.append(pVal)
     edgesHeteroRatioRndNa.append(edgesHeteroRatioRnd)
-edgesHeteroRatioRndNa = np.array(edgesHeteroRatioRndNa)
 
 # Estos p-valores estarian indicando que la red tiene una proporcion de enlaces 
 # entre generos distintos mucho menor que lo esperado por azar por ende, es 
 # homofilica. Esto se mantiene asi para todas las posibles asignaciones de 
 # generos de los delfines cuyo genero no fue definido.
+
+edgesHeteroRatioRndNa = np.array(edgesHeteroRatioRndNa)
 pValNa = np.array(pValNa)
-#%%
+
+#%% 
+#plot de las figuras RndNa
+#graficamos la distribucion nula (random) para la fraccion de enlaces entre 
+#generos diferentes
+
 fig, axs = plt.subplots(nrows=4,ncols=4)
 plt.tight_layout()
 axs = axs.ravel()
 for iterNa in range(0,len(naGenderPos)):
-    # graficamos la distribucion nula (random) para la fraccion de enlaces entre 
-    # generos diferentes
+    plt.tight_layout()
     plt.sca(axs[iterNa])
     plt.hist(edgesHeteroRatioRndNa[iterNa,:], bins=40)
-    plt.axvline(edgesHeteroRatio, color='k', linestyle='dashed', linewidth=1, label='fraccion original')
-    if iterNa == 0:
-        plt.legend()
-        plt.ylabel('frecuencia',fontsize=10)
-        plt.xlabel('fraccion de enlaces heterofilicos',fontsize=10)
+    plt.axvline(edgesHeteroRatio, color='k', linestyle='dashed', linewidth=1)
     plt.title('p-value: ' + str(pValNa[iterNa]) + '[' + str(naGenderPos[iterNa]) + ']',fontsize=10)
-    plt.tight_layout()
     plt.xlim(0,1)
-    axs[iterNa].invert_xaxis()
+    if iterNa==0:
+        plt.axvline(color='k', linestyle='dashed', label='Fraccion original')
 
-    
-
-    
+fig.text(0.5, 0.025, 'Fraccion de enlaces heterofilicos', ha='center', va='center', fontsize=25)
+fig.text(0.25, 0.5, 'Frecuencia', ha='center', va='center', rotation='vertical', fontsize=25)
+fig.suptitle('Distribuciones nulas de redes con asignacion de generos al azar', ha='center', va='center', fontsize=25)
+fig.legend(bbox_to_anchor=(0.85, 0.5), shadow=True, fontsize='xx-large')
 
 plt.show()
 #%%
