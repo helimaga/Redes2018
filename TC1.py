@@ -156,7 +156,6 @@ coherencia de las interacciones reportadas por los tres datasets
 '''
 Considere la red social de 62 delfines de Nueva Zelanda
 '''
-
 # Cargar datos
 
 dolphins = nx.read_gml(path + 'dolphins.gml') # red
@@ -168,6 +167,11 @@ for n in dolphins.nodes():
 
 # Para corroborar, hacemos un print del cada nodo con su respectivo genero
 print(dolphins.nodes("gender"))
+
+#numero de nodos y enlaces de la red dolphins
+nodesTot=dolphins.number_of_nodes()
+edgesTot=dolphins.number_of_edges()
+
 
 #%% Ej. 2(a)
 '''
@@ -204,19 +208,20 @@ Compare su estimacion con el valor medio esperado.
 iii.Estime la significancia estadistica del valor observado en el caso de la red real
 '''
 
-# Acá hay un temita con respecto a cómo considerar los 'na', por el momento si
-# hay un nodo 'f' o'm' que se conecta con un 'na' considero que es un enlace de
-# generos diferentes primero cuento los enlaces entre géneros diferentes
+#se generan las 16 redes que surjen de colocar 'm' o 'f' a los 'na' de la red original
 
 naNum = np.sum(dolphinsGender[:,1]=='na')
 naGenderPos = list(itertools.product(['m','f'], repeat=naNum))
 
+edgesHeteroRatioNa = []
 edgesHeteroRatioRndNa = []
 pValNa = []
+QNa =[]
+
 for iterNa in range(0,len(naGenderPos)):
     dolphinsNa = dolphins.copy()
     na0=-1
-    for n in dolphins.nodes():
+    for n in dolphinsNa.nodes():
         nGender = dolphinsGender[dolphinsGender[:,0]==n.lower(),1][0]
         if nGender=='na':
             na0+=1
@@ -225,15 +230,15 @@ for iterNa in range(0,len(naGenderPos)):
    
     edgesHetero=0
     
-    for (e0,e1) in dolphins.edges():
-        if dolphins.node[e0]['gender'] != dolphins.node[e1]['gender']:
+    for (e0,e1) in dolphinsNa.edges():
+        if dolphinsNa.node[e0]['gender'] != dolphinsNa.node[e1]['gender']:
             edgesHetero+=1
-    
-    nodesTot=dolphins.number_of_nodes()
-    edgesTot=dolphins.number_of_edges()
-    
+     
     #aca calculo la fraccion de enlaces entre generos diferentes para la red de estudio
     edgesHeteroRatio=edgesHetero/edgesTot
+    
+    #guardo para cada una de las redes la fraccion de enlaces entre generos distintos
+    edgesHeteroRatioNa.append(edgesHeteroRatio)
     
     #estrategia 1: permutacion 
     
@@ -253,7 +258,6 @@ for iterNa in range(0,len(naGenderPos)):
                 edgesHeteroRnd+=1
         edgesHeteroRatioRnd.append(edgesHeteroRnd/edgesTot)
 
-
     # Calculamos la probabilidad de que la proporcion de enlaces entre generos 
     # distintos sea tan o mas extrema que la observada para la red de estudio 
     # considerando que HO es verdadera (considerando como distribucion nula a la 
@@ -263,14 +267,34 @@ for iterNa in range(0,len(naGenderPos)):
     pVal=1-sum(i >= edgesHeteroRatio for i in edgesHeteroRatioRnd)/numiter
     pValNa.append(pVal)
     edgesHeteroRatioRndNa.append(edgesHeteroRatioRnd)
-
-# Estos p-valores estarian indicando que la red tiene una proporcion de enlaces 
-# entre generos distintos mucho menor que lo esperado por azar por ende, es 
-# homofilica. Esto se mantiene asi para todas las posibles asignaciones de 
-# generos de los delfines cuyo genero no fue definido.
-
+    
+    # Estos p-valores estarian indicando que la red tiene una proporcion de enlaces 
+    # entre generos distintos mucho menor que lo esperado por azar por ende, es 
+    # homofilica. Esto se mantiene asi para todas las posibles asignaciones de 
+    # generos de los delfines cuyo genero no fue definido.
+    
+    #para cada una de las 16 redes se calcula su modularidad
+    
+    edgesMod = 0
+    for (nodoi, nodoj) in list(dolphins.edges()): 
+        # Se recorren todos los enlaces de la red.
+        ki=dolphins.degree(nodoi)
+        kj=dolphins.degree(nodoj)
+        edgesMod += (ki*kj)/(2*edgesTot)
+    Q = (edgesHetero - edgesMod)/edgesTot
+    
+    QNa.append(Q)
+    #da un valor positivo, es decir que hay mas enlaces entre nodos del mismo tipo que lo
+    #que se esperaria por azar 
+    
+#convierto listas resultantes en numpy arrays
+    
+edgesHeteroRatioNa = np.array(edgesHeteroRatioNa)
 edgesHeteroRatioRndNa = np.array(edgesHeteroRatioRndNa)
 pValNa = np.array(pValNa)
+QNa = np.array(QNa)
+
+#print(dolphins.edges("Ripplefluke"))
 
 #%% 
 #plot de las figuras RndNa
@@ -284,19 +308,21 @@ for iterNa in range(0,len(naGenderPos)):
     plt.tight_layout()
     plt.sca(axs[iterNa])
     plt.hist(edgesHeteroRatioRndNa[iterNa,:], bins=40)
-    plt.axvline(edgesHeteroRatio, color='k', linestyle='dashed', linewidth=1)
+    plt.axvline(edgesHeteroRatioNa[iterNa], color='k', linestyle='dashed', linewidth=1)
     plt.title('p-value: ' + str(pValNa[iterNa]) + '[' + str(naGenderPos[iterNa]) + ']',fontsize=10)
     plt.xlim(0,1)
     if iterNa==0:
         plt.axvline(color='k', linestyle='dashed', label='Fraccion original')
 
 fig.text(0.5, 0.025, 'Fraccion de enlaces heterofilicos', ha='center', va='center', fontsize=25)
-fig.text(0.25, 0.5, 'Frecuencia', ha='center', va='center', rotation='vertical', fontsize=25)
+fig.text(0.20, 0.5, 'Frecuencia', ha='center', va='center', rotation='vertical', fontsize=25)
 fig.suptitle('Distribuciones nulas de redes con asignacion de generos al azar', ha='center', va='center', fontsize=25)
 fig.legend(bbox_to_anchor=(0.85, 0.5), shadow=True, fontsize='xx-large')
 
 plt.show()
+
 #%%
+
 #calculo la media y el desvio estadar para la fraccion de enlaces de la dist nula
 pop_mu=np.mean(ratioEdgesRndGender)
 pop_std=np.std(ratioEdgesRndGender)
