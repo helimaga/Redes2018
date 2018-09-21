@@ -28,16 +28,10 @@ import itertools
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_01/'
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/TPsGrupales/tc01_data/'
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
-
 pathDocente = '?'
 
-<<<<<<< HEAD
-#########
-
-path = pathSanti
-=======
 path = pathHeli
->>>>>>> Cambios en el plot del 2b
+
 
 
 # Configuraciones para los graficos:
@@ -159,11 +153,11 @@ Considere la red social de 62 delfines de Nueva Zelanda
 # Cargar datos
 
 dolphins = nx.read_gml(path + 'dolphins.gml') # red
-dolphinsGender = np.char.lower(np.array(ldata(path+'dolphinsGender.txt'))) # numpy array con los generos
+dolphinsGender = np.array(ldata(path+'dolphinsGender.txt')) # numpy array con los generos
 
 # En este loop, identificamos el genero de cada delfin nodo por nodo:
 for n in dolphins.nodes():
-    dolphins.nodes[n]["gender"] = dolphinsGender[dolphinsGender[:,0]==n.lower(),1][0]
+    dolphins.nodes[n]["gender"] = dolphinsGender[dolphinsGender[:,0]==n,1][0]
 
 # Para corroborar, hacemos un print del cada nodo con su respectivo genero
 print(dolphins.nodes("gender"))
@@ -210,7 +204,7 @@ iii.Estime la significancia estadistica del valor observado en el caso de la red
 
 #se generan las 16 redes que surjen de colocar 'm' o 'f' a los 'na' de la red original
 
-naNum = np.sum(dolphinsGender[:,1]=='na')
+naNum = np.sum(dolphinsGender[:,1]=='NA')
 naGenderPos = list(itertools.product(['m','f'], repeat=naNum))
 
 edgesHeteroRatioNa = []
@@ -222,8 +216,8 @@ for iterNa in range(0,len(naGenderPos)):
     dolphinsNa = dolphins.copy()
     na0=-1
     for n in dolphinsNa.nodes():
-        nGender = dolphinsGender[dolphinsGender[:,0]==n.lower(),1][0]
-        if nGender=='na':
+        nGender = dolphinsGender[dolphinsGender[:,0]==n,1][0]
+        if nGender=='NA':
             na0+=1
             nGender = naGenderPos[iterNa][na0]
         dolphinsNa.nodes[n]["gender"] = nGender
@@ -241,17 +235,17 @@ for iterNa in range(0,len(naGenderPos)):
     edgesHeteroRatioNa.append(edgesHeteroRatio)
     
     #estrategia 1: permutacion 
-    
+
     #luego hago 10000 asignaciones al azar del género a la red dolphinsrnd
     dolphinsRnd=dolphinsNa.copy()
-    dolphinsGenderRnd = dolphinsGender
+    dolphinsGenderRnd = np.array(dolphinsRnd.nodes("gender"))
     edgesHeteroRatioRnd=[]
     numiter=10000
-    
+   
     for i in range(numiter):
-        dolphinsGenderRnd[:,1] = random.sample(list(dolphinsGender[:,1]), nodesTot)
+        dolphinsGenderRnd[:,1] = random.sample(list(dolphinsGenderRnd[:,1]), nodesTot)
         for n in dolphinsRnd.nodes():
-            dolphinsRnd.nodes[n]["gender"] = dolphinsGenderRnd[dolphinsGenderRnd[:,0]==n.lower(),1][0]
+            dolphinsRnd.nodes[n]["gender"] = dolphinsGenderRnd[dolphinsGenderRnd[:,0]==n,1][0]
         edgesHeteroRnd=0
         for (e0,e1) in dolphinsRnd.edges():
             if dolphinsRnd.node[e0]['gender'] != dolphinsRnd.node[e1]['gender']:
@@ -286,7 +280,7 @@ for iterNa in range(0,len(naGenderPos)):
     QNa.append(Q)
     #da un valor positivo, es decir que hay mas enlaces entre nodos del mismo tipo que lo
     #que se esperaria por azar 
-    
+
 #convierto listas resultantes en numpy arrays
     
 edgesHeteroRatioNa = np.array(edgesHeteroRatioNa)
