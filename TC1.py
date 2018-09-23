@@ -555,7 +555,6 @@ fit = igraph.fit_power_law(deg+1, 1)
 '''
 4) Asortatividad
 '''
-
 '''
 a) Considere la red de colaboraciones científicas (netscience.gml) y la red de internet (as-
 july06.gml). Analice si nodos de alto grado tienden a conectarse con nodos de alto grado
@@ -563,31 +562,46 @@ o por el contrario suelen conectarse a nodos de bajo grado? (i.e la red es asort
 disortativa respecto al grado?).
 '''
 
-redesStr = ['netscience','as-22july06']
-redes = {}
-avnd = {}
-degree = {}
-nodes = {}
-degreeAvnd = {}
-
-for s in redesStr: # cambiar!!!
-	redes[s] = nx.read_gml(path + s + '.gml')
-
 '''
 i. Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos.
 '''
 
-nodes = redes[s].nodes()    # nombres de los nodos
-avnd = nx.average_neighbor_degree(redes[s])     # diccionario con el grado promedio de los vecinos de cada nodo.
-degree0 = redes[s].degree()     # grado de cada nodo.
-
-ds = [dict(degree0), avnd]
+redesStr = ['netscience','as-22july06']
+redes = {}
+avnd = {}
+degree0 = {}
+nodes = {}
+degreeAvnd = {}
+ds = {}
 d = {}
-for k in avnd.keys():
-    d[k] = list(d[k] for d in ds)
+indx = []
 
-degreeAvnd = d.values()
-degreeAvnd = np.array(list(degreeAvnd))
+for s in range(len(redesStr)): 
+    redes[s] = nx.read_gml(path + redesStr[s] + '.gml')
+    nodes[s] = redes[s].nodes()
+#nombres de los nodos
+    avnd[s] = nx.average_neighbor_degree(redes[s]) 
+#diccionario con el grado promedio de los vecinos de cada nodo.
+    degree0[s] = redes[s].degree() 
+#grado de cada nodo.
+
+    ds[s] = [dict(degree0[s]), avnd[s]]
+    
+    for k in avnd[s].keys():
+       d[s][k] = list(d[s][k] for d[s] in ds[s])
+
+    degreeAvnd[s] = d[s].values()
+    degreeAvnd[s] = np.array(list(degreeAvnd[s]))
+    
+#primero voy a eliminar los 0 de degreeAvnd para poder realizar el ajuste lineal de logx-logy en el punto ii.
+
+    for k in range(len(degreeAvnd[s][:,0])):
+        if degreeAvnd[s][k,0] == 0:
+            indx.append(k)
+            
+#unicamente la primer red tiene nodos desconectados, borro esos registros de degreeAvnd
+
+degreeAvnd[0] = np.delete(degreeAvnd[0], indx, axis=0)
 
 #%%
 '''
@@ -595,38 +609,50 @@ ii. Analizar la tendencia observada en un gráfico que consigne dicho valor k nn
 como función del grado.
 iii.Asumiendo que k_nn (k) = ak^μ , estime el exponente de correlación a partir de
 realizar una regresión de log k_nn ~ log k. Asegurese de graficar el fiteo en el
-grafico anterior. [hint R: lm permite hacer regresiones lineales]
+grafico anterior. 
 '''
 
-# x from 0 to 30
+model = {}
+redesTitle = ['colaboraciones cientificas', 'internet']
+mu = []
+b = []
 
-x = np.transpose(degreeAvnd[:,0])
-y = np.transpose(degreeAvnd[:,1])
+for s in range(len(degreeAvnd)):
 
-x = x.reshape((-1,1))  # conversion between (N,) dimension arrays and (N,1) 
-y = y.reshape((-1,1))
-
-logx = np.log10(x)
-logy = np.log10(y)
-
-logx = logx.reshape((-1,1))
-logy = logy.reshape((-1,1))
-
-model = LinearRegression()
-model.fit(logx, logy)
-
-logx_new = np.linspace(min(logx), max(logx), 100)
-logy_new = model.predict(logx_new[:, np.newaxis])
-
-plt.figure()
-plt.plot(x, y,'.k')
-plt.plot(10**logx_new, 10**logy_new,'r')
-plt.xlabel(r'Degree, ($k$)')
-plt.ylabel(r'Avergage degree of neighbors, ($k_{nn}$)')
-plt.xscale('log')
-plt.yscale('log')
-
-plt.show()
+    # x from 0 to 30
+    
+    x = np.transpose(degreeAvnd[s][:,0])
+    y = np.transpose(degreeAvnd[s][:,1])
+    
+    x = x.reshape((-1,1))  # conversion between (N,) dimension arrays and (N,1) 
+    y = y.reshape((-1,1))
+    
+    logx = np.log10(x)
+    logy = np.log10(y)
+    
+    logx = logx.reshape((-1,1))
+    logy = logy.reshape((-1,1))
+    
+    model[s] = LinearRegression()
+    model[s].fit(logx, logy)
+    
+    logx_new = np.linspace(min(logx), max(logx), 100)
+    logy_new = model[s].predict(logx_new[:, np.newaxis])
+    
+    mu.append(round(float(model[s].coef_),4))
+    b.append(round(float(model[s].intercept_),4))
+    
+    plt.figure()
+    plt.plot(x, y,'.k')
+    plt.plot(10**logx_new, 10**logy_new,'r', label = r'$\mu$'+ ' = ' + str(mu[s]))
+    plt.text(0.5, 0.5, str(mu[s]))
+    plt.xlabel(r'Degree, ($k$)', fontsize=20)
+    plt.ylabel(r'Average degree of neighbors, ($k_{nn}$)', fontsize=20)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title('Red de ' + redesTitle[s] ,fontsize=30)
+    plt.legend(fontsize=20)
+    plt.show()
 
 #%%
 '''
@@ -638,41 +664,125 @@ Newman.Como se corresponde este coeficiente con el estimado en el punto
 anterior? A qué se debe?
 '''
 
-# Se arma un vector 'netDeg4' con los grados de cada nodo:
-netDeg4 = np.array(list(redes[s].degree()))
-netDeg4Grados = netDeg4[:,1]    # Lista de strings con los grados de cada nodo.
-netDeg4Grados = netDeg4Grados.astype(int) # Lista de ints con los grados de cada nodo.
+rNewman_redes = []
+rNX_redes = []
+redesTitle = ['colaboraciones cientificas', 'internet']
 
-# Usando el método del libro (Newman, ecuaciones 8.29-8.29):
-
-S1=sum(netDeg4Grados)
-S2=sum(netDeg4Grados**2)
-S3=sum(netDeg4Grados**3)
-
-
-suma=0
-for x in list(redes[s].edges()): # Se recorren todos los enlaces de la red.
-    nodoI = x[0]
-    nodoJ = x[1]
+for s in range(len(redes)): 
+    # Se arma un vector 'netDeg4' con los grados de cada nodo:
+    netDeg4 = np.array(redes[s].degree())
+    # Lista con los grados de cada nodo
+    netDeg4Grados = netDeg4[:,1].astype(int)   
     
-    k_i=redes[s].degree(nodoI)
-    k_j=redes[s].degree(nodoJ)
+    # Usando el método del libro (Newman, ecuaciones 8.26-8.29):
     
-    suma = suma + k_i*k_j
-
-Se=2*suma
-
-
-rNewman=(S1*Se-S2**2)/(S1*S3-S2**2)
-print('Coeficiente de correlación (Newman):\nr= ',rNewman)
-
-rNX=nx.degree_assortativity_coefficient(redes[s])
-print('Coeficiente de correlación (función de Networkx):\nr= ',rNX)
+    S1=sum(netDeg4Grados)
+    S2=sum(netDeg4Grados**2)
+    S3=sum(netDeg4Grados**3)
+    
+    suma=0
+    for (nodoi, nodoj) in list(redes[s].edges()): 
+    # Se recorren todos los enlaces de la red.
+        ki=redes[s].degree(nodoi)
+        kj=redes[s].degree(nodoj)
+        suma += ki*kj
+    
+    Se=2*suma
+    
+    rNewman=(S1*Se-S2**2)/(S1*S3-S2**2)
+    rNewman_redes.append(rNewman)
+    
+    
+    rNX=nx.degree_assortativity_coefficient(redes[s])
+    rNX_redes.append(rNX)
+    
+    print('Red de ' + redesTitle[s])
+    print('Coeficiente de correlación (Newman):\nr= ',rNewman)
+    print('Coeficiente de correlación (función de Networkx):\nr= ',rNX)
 
 # Falta comparar con el punto anterior.
 
 #%%
 '''
-b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
-que observa en cuanto a la asortatividad reportada?
+b) Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo que observa en cuanto a la asortatividad reportada?
 '''
+'''
+i.Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos. 
+'''
+
+redesStr = ['Y2H','AP-MS']
+redes = {}
+avnd = {}
+degree0 = {}
+nodes = {}
+degreeAvnd = {}
+ds = {}
+d = {}
+indx = []
+
+for s in range(len(redesStr)):
+    redes[s] = nx.Graph(ldata(path + 'yeast_' + redesStr[s] + '.txt'))
+    nodes[s] = redes[s].nodes()
+    avnd[s] = nx.average_neighbor_degree(redes[s]) 
+    degree0[s] = redes[s].degree() 
+    
+    ds[s] = [dict(degree0[s]), avnd[s]]
+    
+    for k in avnd[s].keys():
+       d[s][k] = list(d[s][k] for d[s] in ds[s])
+
+    degreeAvnd[s] = d[s].values()
+    degreeAvnd[s] = np.array(list(degreeAvnd[s]))
+
+#%%
+'''
+ii. Analizar la tendencia observada en un gráfico que consigne dicho valor k nn (k)
+como función del grado.
+iii.Asumiendo que k_nn (k) = ak^μ , estime el exponente de correlación a partir de
+realizar una regresión de log k_nn ~ log k. Asegurese de graficar el fiteo en el
+grafico anterior. 
+'''
+
+model = {}
+redesTitle = ['Yeast Two-Hybrid', 'Affinity Purification - Mass Spectrometry']
+mu = []
+b = []
+
+for s in range(len(degreeAvnd)):
+
+    # x from 0 to 30
+    
+    x = np.transpose(degreeAvnd[s][:,0])
+    y = np.transpose(degreeAvnd[s][:,1])
+    
+    x = x.reshape((-1,1))  # conversion between (N,) dimension arrays and (N,1) 
+    y = y.reshape((-1,1))
+    
+    logx = np.log10(x)
+    logy = np.log10(y)
+    
+    logx = logx.reshape((-1,1))
+    logy = logy.reshape((-1,1))
+    
+    model[s] = LinearRegression()
+    model[s].fit(logx, logy)
+    
+    logx_new = np.linspace(min(logx), max(logx), 100)
+    logy_new = model[s].predict(logx_new[:, np.newaxis])
+    
+    mu.append(round(float(model[s].coef_),4))
+    b.append(round(float(model[s].intercept_),4))
+    
+    plt.figure()
+    plt.plot(x, y,'.k')
+    plt.plot(10**logx_new, 10**logy_new,'r', label = r'$\mu$'+ ' = ' + str(mu[s]))
+    plt.text(0.5, 0.5, str(mu[s]))
+    plt.xlabel(r'Degree, ($k$)', fontsize=20)
+    plt.ylabel(r'Average degree of neighbors, ($k_{nn}$)', fontsize=20)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title('Red de ' + redesTitle[s] ,fontsize=30)
+    plt.legend(fontsize=20)
+    plt.show()
+    
+#%%
