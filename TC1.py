@@ -20,7 +20,7 @@ import random
 import matplotlib.patches as mpatches
 from statsmodels.stats.proportion import proportions_ztest
 import collections
-import jgraph
+import igraph
 import itertools
 
 # Seleccion de path según la máquina de trabajo:
@@ -30,7 +30,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/T
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 pathDocente = '?'
 
-path = pathHeli
+path = pathSanti
 
 
 
@@ -114,8 +114,8 @@ for s in redesStr:
     # ii
 	df1b.loc[s,'Edges'] = redes[s].number_of_edges()
 	# iii
-    if len(redes[s]) == len(np.unique(redes[s],axis=0)):
-        df1b.loc[s,'Directionality'] = 'Prob-Undir'
+	if len(redes[s]) == len(np.unique(redes[s],axis=0)):
+		df1b.loc[s,'Directionality'] = 'Prob-Undir'
 	else:
 		df1b.loc[s,'Directionality'] = 'Dir'
     # iv
@@ -536,19 +536,45 @@ plt.show()
 
 # Discutir.
 
+#%%
 '''
 b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución.
 '''
 
+from scipy.optimize import curve_fit
 
-# fit_power_law fits a power-law distribution to a data set. 
-#fit_power_law(x, xmin = NULL, start = 2, force.continuous = FALSE, implementation = c("plfit", "R.mle"))
+x=deg
+y=cnt
 
-fit = igraph.fit_power_law(deg+1, 1)
+def modelo(x, m, b):
+    return b*(1/x)**m
 
-#g <- barabasi.game(1000) # increase this number to have a better estimate
-#d <- degree(g, mode="in")
-#fit1 <- fit_power_law(d+1, 10)
+parametros_iniciales = [1,9500]
+
+popt, pcov = curve_fit(modelo, x,y, p0 = parametros_iniciales)
+
+# Resultado del ajuste:
+m=popt[0]
+b=popt[1]
+
+print('\nResultado del ajuste (y = b*(1/x)^m):\nm = %2.4f\tb = %2.4f'%(m,b))
+
+x_modelo = np.linspace(1,2500, 10000)
+
+plt.figure()
+plt.tight_layout()
+plt.plot(x, y,'o',label='Datos')
+plt.xscale('log')
+plt.yscale('log')
+plt.title(r'Ajuste $y=b \left( \dfrac{1}{x^{m}} \right)$')
+plt.plot(x_modelo, modelo(x_modelo, *popt), 'r-', label=r'Ajuste')
+plt.legend(loc='best',fontsize=LegendSize)
+plt.ylabel(r'Cantidad de nodos',fontsize=AxisLabelSize)
+plt.xlabel(r'Grado',fontsize=AxisLabelSize)
+plt.grid()
+plt.tight_layout()
+plt.show()
+
 
 #%% Ej. 4
 
