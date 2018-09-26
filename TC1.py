@@ -20,7 +20,7 @@ import random
 import matplotlib.patches as mpatches
 from statsmodels.stats.proportion import proportions_ztest
 import collections
-import igraph
+import jgraph
 import itertools
 
 # Seleccion de path según la máquina de trabajo:
@@ -30,7 +30,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejas/T
 pathSanti = '/home/santiago/Documentos/RC/tc01_data/'
 pathDocente = '?'
 
-path = pathSanti
+path = pathHeli
 
 
 
@@ -146,6 +146,70 @@ que encuentra para ciertos observables calculados.
 Construya un diagrama de Venn que permita reconocer la cobertura, especificidad y
 coherencia de las interacciones reportadas por los tres datasets
 '''
+
+#primero me genero subgrafos que tengan los mismos nodos, es decir elimino los nodos que no aparecen en los 3 grafos a analizar
+
+commonNodes = []
+for nodoi in list(redes['Y2H']):
+    if nodoi not in redes['LIT']:
+        redes['Y2H'].remove_node(nodoi)
+    elif nodoi not in redes['AP-MS']:
+        redes['Y2H'].remove_node(nodoi)
+    else:
+        commonNodes.append(nodoi)
+
+for nodoi in list(redes['AP-MS']):
+    if nodoi not in commonNodes:
+        redes['AP-MS'].remove_node(nodoi)
+
+for nodoi in list(redes['LIT']):
+    if nodoi not in commonNodes:
+        redes['LIT'].remove_node(nodoi)
+
+redes['Y2H'].number_of_nodes()
+redes['AP-MS'].number_of_nodes()
+redes['LIT'].number_of_nodes()       
+
+#operaciones entre sets
+
+redesAll = nx.intersection_all([redes['Y2H'], redes['AP-MS'], redes['LIT']])
+ne_redesAll = redesAll.number_of_edges()
+
+redesY2H_AP = nx.intersection(redes['Y2H'], redes['AP-MS'])
+ne_redesY2H_AP = redesY2H_AP.number_of_edges()
+ne_onlyY2H_AP = ne_redesY2H_AP - ne_redesAll
+
+redesY2H_LIT = nx.intersection(redes['Y2H'], redes['LIT'])
+ne_redesY2H_LIT = redesY2H_LIT.number_of_edges()
+ne_onlyY2H_LIT = ne_redesY2H_LIT - ne_redesAll
+
+redesAP_LIT = nx.intersection(redes['AP-MS'], redes['LIT'])
+ne_redesAP_LIT = redesAP_LIT.number_of_edges()
+ne_onlyAP_LIT = ne_redesAP_LIT - ne_redesAll
+
+neY2H = redes['Y2H'].number_of_edges()
+neAP = redes['AP-MS'].number_of_edges()
+neLIT = redes['LIT'].number_of_edges()
+
+ne_onlyY2H = neY2H - (ne_redesAll + ne_onlyY2H_AP + ne_onlyY2H_LIT)
+ne_onlyAP = neAP - (ne_redesAll + ne_onlyY2H_AP + ne_onlyAP_LIT)
+ne_onlyLIT = neLIT - (ne_redesAll + ne_onlyY2H_LIT + ne_onlyAP_LIT)
+
+#como graficar con un diagrama de Venn
+
+from matplotlib_venn import venn3, venn3_circles
+
+plt.figure()
+v = venn3(subsets=(ne_onlyY2H, ne_onlyAP, ne_onlyY2H_AP , ne_onlyLIT , ne_onlyY2H_LIT, ne_onlyAP_LIT, ne_redesAll), set_labels = ('Y2H', 'AP-MS', 'LIT'))
+c = venn3_circles(subsets=(ne_onlyY2H, ne_onlyAP, ne_onlyY2H_AP , ne_onlyLIT , ne_onlyY2H_LIT, ne_onlyAP_LIT, ne_redesAll))
+for text in v.set_labels:
+    text.set_fontsize(40)
+for text in v.subset_labels:
+    text.set_fontsize(30)
+plt.title("Diagrama de Venn del número de enlaces para nodos comunes de las 3 redes de proteinas estudiadas", fontsize=40)
+plt.show()
+
+
 #%% Ej. 2
 '''
 Considere la red social de 62 delfines de Nueva Zelanda
