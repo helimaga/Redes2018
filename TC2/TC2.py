@@ -5,16 +5,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import itertools
+import collections
+from random import sample
 
 '''
 import scipy as sp
 from scipy import stats
 from matplotlib import pylab
 from sklearn.linear_model import LinearRegression
-import random
+
 import matplotlib.patches as mpatches
 from statsmodels.stats.proportion import proportions_ztest
-import collections
+
 import igraph
 
 from matplotlib_venn import venn3, venn3_circles
@@ -204,6 +206,84 @@ plt.plot(x_random,y_random)
 #%%
 
 #Tabla 3 de Zotenko et. al. (2008)
+
+#dict guardo la fraccion de nodos en la componente gigante luego de eliminar los nodos esenciales de la red 
+fraction_nodes = {}
+
+for k in redesStr:
+    red_k = redes[k].copy()
+    red_k.remove_nodes_from(list(nodoi for nodoi in red_k if nodoi in essentials))
+    giant = max(nx.connected_component_subgraphs(red_k), key=len)
+    largest_component=giant.number_of_nodes()
+    total_nodes = red_k.number_of_nodes()
+    fraction_nodes[k]=largest_component/total_nodes
+
+#me guardo las redes sin los nodos esenciales 
+redes_ne = {}
+
+#me guardo las redes luego de haberle quitado los nodos rnd no esenciales
+redes_rnd = {}
+
+#me guardo los nodos de las redes sin nodos esenciales y sus grados
+redes_ne_deg = {}
+
+#me guardo los grados de los nodos esenciales
+essentials_deg = {}
+
+#output: fraccion de nodos en la componente gigante luego de sacar los nodos random nonessential
+fraction_nodes_rnd = {}
+
+degreeCount = {}
+
+def group_by_degree(red):
+    newlist, dicpos = [],{}
+    for (val, j) in red:
+        if j in dicpos:
+            newlist[dicpos[j]].append(val)
+        else:
+            newlist.append([val])
+            dicpos[j] = len(dicpos)
+    return newlist, dicpos
+             
+
+for k in redesStr:
+    redes_rnd[k] = redes[k].copy()
+    redes_ne[k]=redes[k].copy()
+    redes_ne[k].remove_nodes_from(list(nodoi for nodoi in redes_ne[k] if nodoi in essentials))
+    redes_ne_deg[k] = sorted(redes_ne[k].degree, key=lambda x: x[1])
+    essentials_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in essentials if nodoi in redes[k]))
+    degreeCount[k] = collections.Counter(essentials_deg[k])
+    group_by_degree(redes_ne_deg[k])
+    chosen_nodes = []
+    for j in range(len(degreeCount[k])):
+        if dicpos.get(j) is not None:
+            chosen_nodes.append(sample(newlist[dicpos[j]], degreeCount[k][j]))
+       
+    redes_rnd[k].remove_nodes_from(chosen_nodes)
+    giant = max(nx.connected_component_subgraphs(redes_rnd[k]), key=len)
+    largest_component=giant.number_of_nodes()
+    total_nodes = redes_rnd[k].number_of_nodes()
+    fraction_nodes_rnd[k]=largest_component/total_nodes
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
