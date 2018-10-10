@@ -360,79 +360,44 @@ redes_ne_deg = {}
 #me guardo los grados de los nodos esenciales
 essentials_deg = {}
 
+#cuento los nodos de las redes esenciales 
+degreeCount = {}
+
 #output: fraccion de nodos en la componente gigante luego de sacar los nodos random nonessential
 fraction_nodes_rnd = {}
 
-degreeCount = {}
-
 def group_by_degree(red):
     newlist, dicpos = [],{}
-    for (val, j) in red:
+    for val, j in red:
         if j in dicpos:
             newlist[dicpos[j]].append(val)
         else:
             newlist.append([val])
             dicpos[j] = len(dicpos)
     return newlist, dicpos
-             
+
 
 for k in redesStr:
+    print(k)
     redes_rnd[k] = redes[k].copy()
-    redes_ne[k]=redes[k].copy()
+    redes_ne[k] = redes[k].copy()
     redes_ne[k].remove_nodes_from(list(nodoi for nodoi in redes_ne[k] if nodoi in essentials))
     redes_ne_deg[k] = sorted(redes_ne[k].degree, key=lambda x: x[1])
     essentials_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in essentials if nodoi in redes[k]))
     degreeCount[k] = collections.Counter(essentials_deg[k])
-    group_by_degree(redes_ne_deg[k])
+    gnodes, dicpos = group_by_degree(redes_ne_deg[k])
     chosen_nodes = []
-    for j in range(len(degreeCount[k])):
+    for j in degreeCount[k].keys():
         if dicpos.get(j) is not None:
-            chosen_nodes.append(sample(newlist[dicpos[j]], degreeCount[k][j]))
-       
-    redes_rnd[k].remove_nodes_from(chosen_nodes)
+            print(degreeCount[k][j])
+            if len(gnodes[dicpos[j]])>=degreeCount[k][j]:
+                chosen_nodes.append(sample(gnodes[dicpos[j]], degreeCount[k][j]))
+            else:
+                print('alt')
+                chosen_nodes.append(sample(gnodes[dicpos[j]], len(gnodes[dicpos[j]])))
+    redes_rnd[k].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
     giant = max(nx.connected_component_subgraphs(redes_rnd[k]), key=len)
     largest_component=giant.number_of_nodes()
     total_nodes = redes_rnd[k].number_of_nodes()
     fraction_nodes_rnd[k]=largest_component/total_nodes
             
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
