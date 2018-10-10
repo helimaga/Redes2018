@@ -7,9 +7,10 @@ import pandas as pd
 import itertools
 import collections
 from random import sample
+import scipy as sp
 
 '''
-import scipy as sp
+
 from scipy import stats
 from matplotlib import pylab
 from sklearn.linear_model import LinearRegression
@@ -27,7 +28,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc02Data/'
 pathDocente = '?'
 
-path = pathSanti
+path = pathHeli
 
 plt.close('all')
 plt.rc('text', usetex=False)
@@ -401,3 +402,47 @@ for k in redesStr:
     total_nodes = redes_rnd[k].number_of_nodes()
     fraction_nodes_rnd[k]=largest_component/total_nodes
             
+#%%
+#Punto C - Figura 2B    
+
+redes_deg = {}
+essentials_deg = {}
+degCount = {}
+degCount_essentials = {}
+freq_pe = {}
+
+x = {}
+y = {}
+
+for k in redesStr:
+    essentials_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in redes[k] if nodoi in essentials))
+    redes_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in redes[k]))
+    degCount[k] = collections.Counter(redes_deg[k])
+    degCount_essentials[k] = collections.Counter(essentials_deg[k])
+    freq_pe[k] = dict()
+    for l in degCount[k].keys():
+        if degCount_essentials[k].get(l) is not None:
+            freq_pe[k][l] = np.log(1 - (degCount_essentials[k][l]/degCount[k][l]))
+        else:
+            freq_pe[k][l] = 0
+
+    x[k] = list(freq_pe[k].keys())
+    y[k] = list(freq_pe[k].values())
+
+    plt.figure()
+    plt.plot(x[k],y[k],'o')
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
