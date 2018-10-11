@@ -24,7 +24,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc02Data/'
 pathDocente = '?'
 
-path = pathHeli
+path = pathSanti
 
 plt.close('all')
 plt.rc('text', usetex=False)
@@ -158,164 +158,62 @@ plt.show()
 #Analisis de vulnerabilidad
 #Figura 3 de Zotenko et. al. (2008)
 
+def RemoveNodes(RED,method):
+    # Función que remueve los nodos.
+    red=RED.copy()
+
+    print('\n',method)
+    x=[]
+    y=[]
+    N0=red.number_of_nodes()
+    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
+    giant = max(nx.connected_component_subgraphs(red), key=len)
+    largest_component=giant.number_of_nodes()
+    
+    # Se remueven los nodos según el método:
+    while largest_component>1:
+        if method=='Random':
+            Node=np.random.choice(list(red.nodes))
+        elif method=='Degree':
+            D=dict(nx.degree_centrality(red))
+            Node = max(D, key=D.get)
+        elif method=='Eigenvector':
+            D=dict(nx.eigenvector_centrality(red,tol=1e-03))
+            Node = max(D, key=D.get)
+        elif method=='Subgraph':
+            D=dict(nx.subgraph_centrality(red))
+            Node = max(D, key=D.get)
+        elif method=='Shortest path':
+            D=dict(nx.betweenness_centrality(red))
+            Node = max(D, key=D.get)
+        elif method=='Current flow':
+            D=dict(nx.current_flow_closeness_centrality(red))
+            Node = max(D, key=D.get)
+            
+        red.remove_node(Node)
+        giant = max(nx.connected_component_subgraphs(red), key=len)
+        largest_component=giant.number_of_nodes()
+        N=red.number_of_nodes()
+        print('\rNodos restantes:\t%4d'%(N),end='')
+        x.append(1-N/N0)
+        y.append(largest_component/N)
+    
+    plt.plot(x,y,label=method)
+    return
 
 for s in redesStr:
-    ######################################################
-    # Aleatorio:
-    print('\nRANDOM:')
-    red=redes[s].copy()
-    x_random=[]
-    y_random=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        randomNode=np.random.choice(list(red.nodes))   # se elige un nodo al azar
-        red.remove_node(randomNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_random.append(1-N/N0)
-        y_random.append(largest_component/N)
-
-    ######################################################
-    # Grado:
-    print('\nDEGREE:')
-    red=redes[s].copy()
-    x_degree=[]
-    y_degree=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        D=dict(nx.degree_centrality(red))
-        maxDegreeNode = max(D, key=D.get) # se toma el nodo de máxima centralidad.
-        red.remove_node(maxDegreeNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_degree.append(1-N/N0)
-        y_degree.append(largest_component/N)
-    
-    ######################################################
-    # Autovalor:
-    print('\nEIGENVECTOR:')
-    red=redes[s].copy()
-    x_eigenvector=[]
-    y_eigenvector=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        D=dict(nx.eigenvector_centrality(red,tol=1e-03))  # Se relaja la tolerancia (por defecto 1e-06) porque si no, no converge.
-        maxDegreeNode = max(D, key=D.get) # se toma el nodo de máxima centralidad.
-        red.remove_node(maxDegreeNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_eigenvector.append(1-N/N0)
-        y_eigenvector.append(largest_component/N)
-    
-    
-    ######################################################
-    # Subgrafos:
-    print('\nSUBGRAPH:')
-    red=redes[s].copy()
-    x_subgraph=[]
-    y_subgraph=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        D=dict(nx.subgraph_centrality(red))
-        maxDegreeNode = max(D, key=D.get) # se toma el nodo de máxima centralidad.
-        red.remove_node(maxDegreeNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_subgraph.append(1-N/N0)
-        y_subgraph.append(largest_component/N)
-    
-    ######################################################
-    # Camino más corto:
-    print('\nSHORTEST PATH:')
-    red=redes[s].copy()
-    x_shortest_path=[]
-    y_shortest_path=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        D=dict(nx.betweenness_centrality(red))
-        maxDegreeNode = max(D, key=D.get) # se toma el nodo de máxima centralidad.
-        red.remove_node(maxDegreeNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_shortest_path.append(1-N/N0)
-        y_shortest_path.append(largest_component/N)
-    
-    '''
-    ######################################################
-    # Current flow:
-    print('\nCURRENT FLOW:')
-    red=redes[s].copy()
-    x_current_flow=[]
-    y_current_flow=[]
-    N0=red.number_of_nodes()
-    print('Cantidad inicial de nodos de la red %s:\t%d'%(s,N0))
-    
-    giant = max(nx.connected_component_subgraphs(red), key=len)
-    largest_component=giant.number_of_nodes()
-    while largest_component>1:
-        D=dict(nx.current_flow_closeness_centrality(red))
-        maxDegreeNode = max(D, key=D.get) # se toma el nodo de máxima centralidad.
-        red.remove_node(maxDegreeNode)
-        giant = max(nx.connected_component_subgraphs(red), key=len)
-        largest_component=giant.number_of_nodes()
-        N=red.number_of_nodes()
-        
-        print('\rNodos restantes:\t%4d'%(N),end='')
-        x_current_flow.append(1-N/N0)
-        y_current_flow.append(largest_component/N)
-    
-    
-    '''
-
-#    x_essential=[]
-#    y_essential=[]
-
-    ############################################################################
-    ############################################################################
-    # Gráfico:
+    print('\n\nRed: %s'%(s))
     plt.figure()
-    plt.plot(x_random,y_random,label='Random')
-    plt.plot(x_degree,y_degree,label='Degree')
-    plt.plot(x_eigenvector,y_eigenvector,label='Eigenvector')
-    plt.plot(x_subgraph,y_subgraph,label='Subgraph')
-    plt.plot(x_shortest_path,y_shortest_path,label='Shortest path')
-#    plt.plot(x_current_flow,y_current_flow,label='Current flow')
-#    plt.plot(x_essential,y_essential,label='Shortest path')
+
+    RemoveNodes(redes[s],'Random')
+    RemoveNodes(redes[s],'Degree')
+    RemoveNodes(redes[s],'Eigenvector')
+    RemoveNodes(redes[s],'Subgraph')
+    RemoveNodes(redes[s],'Shortest path')
+    #RemoveNodes(redes[s],'Current flow')    # ESTE NO ANDA. REVISAR.
+    
+    # FALTA TAMBIÉN AGREGAR EL PUNTO DE ESENCIALES.
+    
     plt.xticks(np.arange(0, 1.1, step=0.1))
     plt.yticks(np.arange(0, 1.1, step=0.1))
     plt.xlim((0, 0.35))
@@ -323,12 +221,11 @@ for s in redesStr:
     plt.xlabel('Fraction of nodes', fontsize=AxisLabelSize)
     plt.ylabel('Largest connected component', fontsize=AxisLabelSize)   
     plt.title('Red %s'%(s), fontsize=TitleSize)
-    plt.legend(loc='upper right', fontsize=LegendSize) 
+    plt.legend(loc='upper right', fontsize=LegendSize)
     plt.grid(axis='both', color='k', linestyle='dashed', linewidth=2, alpha=0.1)
     plt.show()
-#degree_centrality(G)
-#closeness_centrality(G[, u, distance, ...])
-#eigenvector_centrality(G[, max_iter, tol, ...])
+    
+
 
 #%%
 
