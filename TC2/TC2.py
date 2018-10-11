@@ -8,18 +8,14 @@ import itertools
 import collections
 from random import sample
 import scipy as sp
-
-'''
-
-from scipy import stats
-from matplotlib import pylab
 from sklearn.linear_model import LinearRegression
 
+'''
+from scipy import stats
+from matplotlib import pylab
 import matplotlib.patches as mpatches
 from statsmodels.stats.proportion import proportions_ztest
-
 import igraph
-
 from matplotlib_venn import venn3, venn3_circles
 '''
 
@@ -341,13 +337,13 @@ for s in redesStr:
 #dict guardo la fraccion de nodos en la componente gigante luego de eliminar los nodos esenciales de la red 
 fraction_nodes = {}
 
-for k in redesStr:
-    red_k = redes[k].copy()
-    red_k.remove_nodes_from(list(nodoi for nodoi in red_k if nodoi in essentials))
-    giant = max(nx.connected_component_subgraphs(red_k), key=len)
+for s in redesStr:
+    red_s = redes[s].copy()
+    red_s.remove_nodes_from(list(nodoi for nodoi in red_s if nodoi in essentials))
+    giant = max(nx.connected_component_subgraphs(red_s), key=len)
     largest_component=giant.number_of_nodes()
-    total_nodes = red_k.number_of_nodes()
-    fraction_nodes[k]=largest_component/total_nodes
+    total_nodes = red_s.number_of_nodes()
+    fraction_nodes[s]=largest_component/total_nodes
 
 #me guardo las redes sin los nodos esenciales 
 redes_ne = {}
@@ -378,29 +374,29 @@ def group_by_degree(red):
     return newlist, dicpos
 
 
-for k in redesStr:
-    print(k)
-    redes_rnd[k] = redes[k].copy()
-    redes_ne[k] = redes[k].copy()
-    redes_ne[k].remove_nodes_from(list(nodoi for nodoi in redes_ne[k] if nodoi in essentials))
-    redes_ne_deg[k] = sorted(redes_ne[k].degree, key=lambda x: x[1])
-    essentials_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in essentials if nodoi in redes[k]))
-    degreeCount[k] = collections.Counter(essentials_deg[k])
-    gnodes, dicpos = group_by_degree(redes_ne_deg[k])
+for s in redesStr:
+    print(s)
+    redes_rnd[s] = redes[s].copy()
+    redes_ne[s] = redes[s].copy()
+    redes_ne[s].remove_nodes_from(list(nodoi for nodoi in redes_ne[s] if nodoi in essentials))
+    redes_ne_deg[s] = sorted(redes_ne[s].degree, key=lambda x: x[1])
+    essentials_deg[s] = sorted(list(redes[s].degree(nodoi) for nodoi in essentials if nodoi in redes[s]))
+    degreeCount[s] = collections.Counter(essentials_deg[s])
+    gnodes, dicpos = group_by_degree(redes_ne_deg[s])
     chosen_nodes = []
-    for j in degreeCount[k].keys():
+    for j in degreeCount[s].keys():
         if dicpos.get(j) is not None:
-            print(degreeCount[k][j])
-            if len(gnodes[dicpos[j]])>=degreeCount[k][j]:
-                chosen_nodes.append(sample(gnodes[dicpos[j]], degreeCount[k][j]))
+            print(degreeCount[s][j])
+            if len(gnodes[dicpos[j]])>=degreeCount[s][j]:
+                chosen_nodes.append(sample(gnodes[dicpos[j]], degreeCount[s][j]))
             else:
                 print('alt')
                 chosen_nodes.append(sample(gnodes[dicpos[j]], len(gnodes[dicpos[j]])))
-    redes_rnd[k].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
-    giant = max(nx.connected_component_subgraphs(redes_rnd[k]), key=len)
+    redes_rnd[s].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
+    giant = max(nx.connected_component_subgraphs(redes_rnd[s]), key=len)
     largest_component=giant.number_of_nodes()
-    total_nodes = redes_rnd[k].number_of_nodes()
-    fraction_nodes_rnd[k]=largest_component/total_nodes
+    total_nodes = redes_rnd[s].number_of_nodes()
+    fraction_nodes_rnd[s]=largest_component/total_nodes
             
 #%%
 #Punto C - Figura 2B    
@@ -413,36 +409,51 @@ freq_pe = {}
 
 x = {}
 y = {}
+model = {}
+m = {}
+b = {}
 
-for k in redesStr:
-    essentials_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in redes[k] if nodoi in essentials))
-    redes_deg[k] = sorted(list(redes[k].degree(nodoi) for nodoi in redes[k]))
-    degCount[k] = collections.Counter(redes_deg[k])
-    degCount_essentials[k] = collections.Counter(essentials_deg[k])
-    freq_pe[k] = dict()
-    for l in degCount[k].keys():
-        if degCount_essentials[k].get(l) is not None:
-            freq_pe[k][l] = np.log(1 - (degCount_essentials[k][l]/degCount[k][l]))
+alpha = {}
+beta = {}
+
+for s in redesStr:
+    essentials_deg[s] = sorted(list(redes[s].degree(nodoi) for nodoi in redes[s] if nodoi in essentials))
+    redes_deg[s] = sorted(list(redes[s].degree(nodoi) for nodoi in redes[s]))
+    degCount[s] = collections.Counter(redes_deg[s])
+    degCount_essentials[s] = collections.Counter(essentials_deg[s])
+    freq_pe[s] = dict()
+    for l in degCount[s].keys():
+        if degCount_essentials[s].get(l) is not None:
+            freq_pe[s][l] = np.log(1 - (degCount_essentials[s][l]/degCount[s][l]))
         else:
-            freq_pe[k][l] = 0
+            freq_pe[s][l] = 0
 
-    x[k] = list(freq_pe[k].keys())
-    y[k] = list(freq_pe[k].values())
-
-    plt.figure()
-    plt.plot(x[k],y[k],'o')
+    x = np.array(list(freq_pe[s].keys())[:10])
+    y = np.array(list(freq_pe[s].values())[:10])
     
+    x = x.reshape((-1,1))
+    y = y.reshape((-1,1))
 
+    model[s] = LinearRegression()
+    model[s].fit(x, y)
+    
+    y_predict = model[s].predict(x)
+    r2 = round(float(model[s].score(x,y)),4)
+    
+    m[s] = round(float(model[s].coef_),4)
+    b[s] = round(float(model[s].intercept_),4)
 
-
-
-
-
-
-
-
-
-
-
-
+    alpha[s] = 1 - 10**m[s]
+    beta[s] =  1 - 10**b[s]
+    
+    textStr= '$ln(1-P_{E})=%.2fk%.2f$\n$alpha=%.2f$\n$beta=%.2f$\n$r^{2}=%.2f$'%(m[s],b[s],alpha[s],beta[s],r2)
+    
+    plt.figure()
+    plt.plot(x, y,'.k')
+    plt.plot(x, y_predict, 'r', label=textStr)
+    plt.xlabel(r'Degree or protein connectivity ($k$)', fontsize=20)
+    plt.ylabel(r'$ln(1-P_{E})$', fontsize=20)
+    plt.title('Red ' + s ,fontsize=30)
+    plt.legend(fontsize=20)
+    plt.show()
 
