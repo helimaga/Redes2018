@@ -354,3 +354,38 @@ for s in redesStr:
     plt.legend(fontsize=20)
     plt.show()
 
+#%%
+    
+#Tabla 5 de Zotenko et. al. (2008) - En Número esperado solo deben incluir el obtenido
+#a partir del ajuste lineal.
+
+total_pairs = {}
+same_pairs = {}
+
+for s in redesStr:
+    if s == 'Y2H':
+        common_neighbors = 1
+    else:
+        common_neighbors = 3
+        
+    node_pairs = itertools.combinations(redes[s].nodes, 2)
+    
+    number_of_pairs = 0
+    number_of_epairs = 0
+    number_of_nonepairs = 0
+    
+    for (nodei, nodej) in node_pairs:
+        if nodej not in redes[s].neighbors(nodei):
+            path_len2 = list(nx.all_simple_paths(redes[s], nodei, nodej, cutoff=2))
+            if len(path_len2) >= common_neighbors:
+                number_of_pairs += 1
+                if nodei in essentials:
+                    if nodej in essentials: 
+                        number_of_epairs +=1
+                elif nodej not in essentials:
+                    number_of_nonepairs += 1
+    
+    number_of_same_pairs = number_of_epairs + number_of_nonepairs
+    total_pairs[s] = number_of_pairs
+    same_pairs[s] = number_of_same_pairs
+    
