@@ -133,7 +133,6 @@ for k in redesStr:
         ratio.append(count_hubs_essentials/count_hubs)
     ratio_hubs_essentials[k]= ratio
 
-
 x = []
 for i in range(len(percentiles)):
     x.append(1 - percentiles[i]/100)
@@ -155,7 +154,7 @@ plt.show()
 
 #%%
 
-#Analisis de vulnerabilidad
+#Punto B - Analisis de vulnerabilidad 
 #Figura 3 de Zotenko et. al. (2008)
 
 def RemoveNodes(RED,method):
@@ -187,7 +186,7 @@ def RemoveNodes(RED,method):
             D=dict(nx.betweenness_centrality(red))
             Node = max(D, key=D.get)
         elif method=='Current flow':
-            D=dict(nx.current_flow_closeness_centrality(red))
+            D=dict(nx.current_flow_betweenness_centrality(red))
             Node = max(D, key=D.get)
             
         red.remove_node(Node)
@@ -210,8 +209,11 @@ for s in redesStr:
     RemoveNodes(redes[s],'Eigenvector')
     RemoveNodes(redes[s],'Subgraph')
     RemoveNodes(redes[s],'Shortest path')
-    #RemoveNodes(redes[s],'Current flow')    # ESTE NO ANDA. REVISAR.
+    RemoveNodes(redes[s],'Current flow')
     
+    #red=redes[s].copy()
+
+    #red.remove_nodes_from(essentials)
     # FALTA TAMBIÉN AGREGAR EL PUNTO DE ESENCIALES.
     
     plt.xticks(np.arange(0, 1.1, step=0.1))
@@ -296,7 +298,8 @@ for s in redesStr:
     fraction_nodes_rnd[s]=largest_component/total_nodes
             
 #%%
-#Punto C - Figura 2B    
+
+#Punto D - Figura 2B    
 
 redes_deg = {}
 essentials_deg = {}
@@ -325,8 +328,8 @@ for s in redesStr:
         else:
             freq_pe[s][l] = 0
 
-    x = np.array(list(freq_pe[s].keys())[:10])
-    y = np.array(list(freq_pe[s].values())[:10])
+    x = np.array(list(freq_pe[s].keys())[:9])
+    y = np.array(list(freq_pe[s].values())[:9])
     
     x = x.reshape((-1,1))
     y = y.reshape((-1,1))
@@ -340,8 +343,8 @@ for s in redesStr:
     m[s] = round(float(model[s].coef_),4)
     b[s] = round(float(model[s].intercept_),4)
 
-    alpha[s] = 1 - 10**m[s]
-    beta[s] =  1 - 10**b[s]
+    alpha[s] = 1 - np.exp(m[s])
+    beta[s] =  1 - np.exp(b[s])
     
     textStr= '$ln(1-P_{E})=%.2fk%.2f$\n$alpha=%.2f$\n$beta=%.2f$\n$r^{2}=%.2f$'%(m[s],b[s],alpha[s],beta[s],r2)
     
@@ -359,10 +362,18 @@ for s in redesStr:
 #Tabla 5 de Zotenko et. al. (2008) - En Número esperado solo deben incluir el obtenido
 #a partir del ajuste lineal.
 
+def p_same_pair(alpha, beta, ki, kj):
+    p_essential_i = 1-((1-alpha)**ki)*(1-beta)
+    p_essential_j = 1-((1-alpha)**kj)*(1-beta)
+    return 1 - p_essential_i - p_essential_j + 2*p_essential_i*p_essential_j
+
 total_pairs = {}
 same_pairs = {}
+expected_same_pairs = {}
 
-for s in redesStr:
+for s in redesStr:   
+    proba = []
+    
     if s == 'Y2H':
         common_neighbors = 1
     else:
@@ -378,6 +389,7 @@ for s in redesStr:
         if nodej not in redes[s].neighbors(nodei):
             path_len2 = list(nx.all_simple_paths(redes[s], nodei, nodej, cutoff=2))
             if len(path_len2) >= common_neighbors:
+                proba.append(p_same_pair(alpha[s], beta[s], redes[s].degree(nodei), redes[s].degree(nodej)))
                 number_of_pairs += 1
                 if nodei in essentials:
                     if nodej in essentials: 
@@ -388,4 +400,4 @@ for s in redesStr:
     number_of_same_pairs = number_of_epairs + number_of_nonepairs
     total_pairs[s] = number_of_pairs
     same_pairs[s] = number_of_same_pairs
-    
+    expected_same_pairs[s] = np.sum(proba)
