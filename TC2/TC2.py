@@ -1,3 +1,5 @@
+###
+
 #TRABAJO COMPUTACIONAL 2#
 
 import networkx as nx
@@ -7,7 +9,7 @@ import pandas as pd
 import itertools
 import collections
 from random import sample
-import scipy as sp
+#import scipy as sp
 from sklearn.linear_model import LinearRegression
 
 '''
@@ -24,7 +26,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc02Data/'
 pathDocente = '?'
 
-path = pathSanti
+path = pathHeli
 
 plt.close('all')
 plt.rc('text', usetex=False)
@@ -69,6 +71,36 @@ print(essentials)
 
 #%%
 
+#Punto B
+#Caracteristicas de las redes analizadas - Tabla 1 de Zotenko et. al. (2008)
+
+dfB1 = pd.DataFrame()
+
+for s in redesStr:
+	dfB1.loc[s,'Nodes'] = redes[s].number_of_nodes()
+	dfB1.loc[s,'Edges'] = redes[s].number_of_edges()
+	if len(redes[s]) == len(np.unique(redes[s],axis=0)):
+		dfB1.loc[s,'Directionality'] = 'Prob-Undir'
+	else:
+		dfB1.loc[s,'Directionality'] = 'Dir'
+	netDeg = np.array(list(redes[s].degree()))
+	netDeg = netDeg[:,1]
+	netDeg = netDeg.astype(int)
+	dfB1.loc[s,'DegMean'] = np.mean(netDeg)
+	dfB1.loc[s,'DegMin'] = np.min(netDeg)
+	dfB1.loc[s,'DegMax'] = np.max(netDeg)
+	dfB1.loc[s,'DegDensity'] = nx.density(redes[s])
+	dfB1.loc[s,'C_tri'] = nx.transitivity(redes[s])
+	dfB1.loc[s,'C_avg'] = nx.average_clustering(redes[s])
+	giant = max(nx.connected_component_subgraphs(redes[s]), key=len)
+	dfB1.loc[s,'Diameter (Giant Subgraph)'] = nx.diameter(giant)
+
+tabla1 = dfB1.to_latex(buf=None, columns=['Nodes','Edges','DegMean','C_avg'], col_space=None, bold_rows=False,float_format='%.3f')
+
+
+#%%
+
+#Punto B
 #Caracteristicas de las redes analizadas - Tabla 2 de Zotenko et al.
 
 #primero chequeo que las redes no tengan enlaces repetidos
@@ -104,13 +136,19 @@ for (j,k) in iter:
 dfB2 = pd.DataFrame(ratios, columns=redesStr)
 dfB2.index = redesStr
 
+<<<<<<< HEAD
 tabla=dfB2.to_latex(buf=None, columns=['Y2H','AP-MS','LIT','LIT_Reguly'], col_space=None, bold_rows=False,float_format='%.3f')
 
 print('Tabla 2:\n')
 print(tabla)
+=======
+tabla2 = dfB2.to_latex(buf=None, columns=['Y2H','AP-MS','LIT','LIT_Reguly'], col_space=None, bold_rows=False,float_format='%.3f')
+
+>>>>>>> Tabla 3 reformulada
 
 #%% 
 
+#Punto B
 #Caracteristicas de las redes analizadas - Figura 1A  de Zotenko et al.
 
 percentiles = np.linspace(0,100,num=101)
@@ -160,7 +198,7 @@ plt.savefig(path+'/Figuras/Figura1.pdf')
 
 #%%
 
-#Punto B - Analisis de vulnerabilidad 
+#Punto C - Analisis de vulnerabilidad 
 #Figura 3 de Zotenko et. al. (2008)
 
 def RemoveNodes(RED,method):
@@ -257,18 +295,19 @@ for s in redesStr:
 
 #%%
 
+#Punto C - Analisis de vulnerabilidad 
 #Tabla 3 de Zotenko et. al. (2008)
 
-#dict guardo la fraccion de nodos en la componente gigante luego de eliminar los nodos esenciales de la red 
-fraction_nodes = {}
-
-for s in redesStr:
-    red_s = redes[s].copy()
-    red_s.remove_nodes_from(list(nodoi for nodoi in red_s if nodoi in essentials))
-    giant = max(nx.connected_component_subgraphs(red_s), key=len)
-    largest_component=giant.number_of_nodes()
-    total_nodes = red_s.number_of_nodes()
-    fraction_nodes[s]=largest_component/total_nodes
+def fraction_nodes_giantcomp(red0, chosen_nodes):
+    
+    red = red0.copy()
+    red.remove_nodes_from(chosen_nodes)
+    giant = max(nx.connected_component_subgraphs(red), key=len)
+    largest_component = giant.number_of_nodes()
+    total_nodes = red.number_of_nodes()
+    frac_nodes = largest_component/total_nodes
+    
+    return frac_nodes
 
 #me guardo las redes sin los nodos esenciales 
 redes_ne = {}
@@ -279,53 +318,82 @@ redes_rnd = {}
 #me guardo los nodos de las redes sin nodos esenciales y sus grados
 redes_ne_deg = {}
 
-#me guardo los grados de los nodos esenciales
+#me guardo los nodos esenciales y sus grados
 essentials_deg = {}
 
-#cuento los nodos de las redes esenciales 
-degreeCount = {}
 
-#output: fraccion de nodos en la componente gigante luego de sacar los nodos random nonessential
-fraction_nodes_rnd = {}
-
-def group_by_degree(red):
-    newlist, dicpos = [],{}
-    for val, j in red:
-        if j in dicpos:
-            newlist[dicpos[j]].append(val)
+def group_by_degree_deciles(node_deg, s):
+    nodes_degdec = {}
+    j = 10
+    m = []
+    for n in range(len(node_deg)):
+        if node_deg[n][1] <= degree_cutoff[s][j]:
+            m.append(node_deg[n][0])
+            if n == len(node_deg)-1:
+                nodes_degdec[j] = m
         else:
-            newlist.append([val])
-            dicpos[j] = len(dicpos)
-    return newlist, dicpos
+            if degree_cutoff[s][j] == degree_cutoff[s][j+10]:
+                p = 0
+                while degree_cutoff[s][j+p] == degree_cutoff[s][j+p+10]:
+                    p += 10
+                j += p 
+                nodes_degdec[j] = m
+                m = []
+                m.append(node_deg[n][0])
+                j += 10
+            else:
+                nodes_degdec[j] = m
+                m = []
+                m.append(node_deg[n][0])
+                j += 10
+    return nodes_degdec
 
+dftabla3 = pd.DataFrame()
+rnd_iter = 30
 
 for s in redesStr:
-    print(s)
-    redes_rnd[s] = redes[s].copy()
+    
     redes_ne[s] = redes[s].copy()
-    redes_ne[s].remove_nodes_from(list(nodoi for nodoi in redes_ne[s] if nodoi in essentials))
+    redes_ne[s].remove_nodes_from(list(nodei for nodei in redes_ne[s] if nodei in essentials))
     redes_ne_deg[s] = sorted(redes_ne[s].degree, key=lambda x: x[1])
-    essentials_deg[s] = sorted(list(redes[s].degree(nodoi) for nodoi in essentials if nodoi in redes[s]))
-    degreeCount[s] = collections.Counter(essentials_deg[s])
-    gnodes, dicpos = group_by_degree(redes_ne_deg[s])
-    chosen_nodes = []
-    for j in degreeCount[s].keys():
-        if dicpos.get(j) is not None:
-            print(degreeCount[s][j])
-            if len(gnodes[dicpos[j]])>=degreeCount[s][j]:
-                chosen_nodes.append(sample(gnodes[dicpos[j]], degreeCount[s][j]))
+    essentials_deg[s] = sorted(list((nodei, redes[s].degree(nodei)) for nodei in redes[s] if nodei in essentials), key=lambda x: x[1])
+    
+    dec_nonEssentials = group_by_degree_deciles(redes_ne_deg[s], s)
+    dec_Essentials = group_by_degree_deciles(essentials_deg[s], s)
+    
+    fraction_rnd_nodes = []
+    
+    for i in range(rnd_iter):
+        
+        chosen_rnd_nodes = []
+        chosen_nodes = []
+        for j in dec_Essentials.keys():
+            numEssentials = len(dec_Essentials[j])
+            numNonEssentials = len(dec_nonEssentials[j])
+            if numEssentials <= numNonEssentials:
+                chosen_rnd_nodes.append(sample(dec_nonEssentials[j], numEssentials))
+                if i == rnd_iter-1:
+                    chosen_nodes.append(dec_Essentials[j])
             else:
-                print('alt')
-                chosen_nodes.append(sample(gnodes[dicpos[j]], len(gnodes[dicpos[j]])))
-    redes_rnd[s].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
-    giant = max(nx.connected_component_subgraphs(redes_rnd[s]), key=len)
-    largest_component=giant.number_of_nodes()
-    total_nodes = redes_rnd[s].number_of_nodes()
-    fraction_nodes_rnd[s]=largest_component/total_nodes
-            
+                chosen_rnd_nodes.append(sample(dec_nonEssentials[j], numNonEssentials))
+                if i == rnd_iter-1:
+                    chosen_nodes.append(sample(dec_Essentials[j], numNonEssentials))
+              
+        chosen_rnd_nodes = [item for sublist in chosen_rnd_nodes for item in sublist]  
+        fraction_rnd_nodes.append(fraction_nodes_giantcomp(redes[s], chosen_rnd_nodes))
+    
+    chosen_nodes = [item for sublist in chosen_nodes for item in sublist] 
+     
+    dftabla3.loc[s, 'Essential'] = fraction_nodes_giantcomp(redes[s], chosen_nodes)
+    dftabla3.loc[s, 'Random nonessential Mean'] = np.mean(fraction_rnd_nodes)
+    dftabla3.loc[s, 'Random nonessential Std'] = np.std(fraction_rnd_nodes)
+ 
+tabla3=dftabla3.to_latex(float_format='%.3f')
+
 #%%
 
-#Punto D - Figura 2B    
+#Punto D - Esencialidad
+#Figura 2B de He et al. (2006)
 
 redes_deg = {}
 essentials_deg = {}
@@ -384,7 +452,8 @@ for s in redesStr:
     plt.show()
 
 #%%
-    
+
+#Punto D - Esencialidad
 #Tabla 5 de Zotenko et. al. (2008) - En Número esperado solo deben incluir el obtenido
 #a partir del ajuste lineal.
 
@@ -427,3 +496,45 @@ for s in redesStr:
     total_pairs[s] = number_of_pairs
     same_pairs[s] = number_of_same_pairs
     expected_same_pairs[s] = np.sum(proba)
+
+#%%
+
+'''
+for s in redesStr:
+    redes_rnd[s] = redes[s].copy()
+    redes_ne[s] = redes[s].copy()
+    redes_ne[s].remove_nodes_from(list(nodoi for nodoi in redes_ne[s] if nodoi in essentials))
+    redes_ne_deg[s] = sorted(redes_ne[s].degree, key=lambda x: x[1])
+    essentials_deg[s] = sorted(list(tuple(nodoi, redes[s].degree(nodoi)) for nodoi in redes[s] if nodoi in essentials))
+    degreeCount[s] = collections.Counter(essentials_deg[s])
+    gnodes, dicpos = group_by_degree(redes_ne_deg[s])
+    chosen_nodes = []
+    conflict_keys = []
+    for j in degreeCount[s].keys():
+        
+        numEssentials = degreeCount[s][j]
+        
+        if dicpos.get(j) is not None: 
+            
+            numNonEssentials = len(gnodes[dicpos[j]])
+            
+            if numNonEssentials >= numEssentials:
+                chosen_nodes.append(sample(gnodes[dicpos[j]], numEssentials))
+            else:
+                chosen_nodes.append(sample(gnodes[dicpos[j]], numNonEssentials))
+                diff = numEssentials - numNonEssentials
+                conflict_keys.append(j)
+                conflict_keys.append(j)
+        else:
+            conflict_keys.append(j)
+    print(conflict_keys)
+                
+    redes_rnd[s].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
+    giant = max(nx.connected_component_subgraphs(redes_rnd[s]), key=len)
+    largest_component=giant.number_of_nodes()
+    total_nodes = redes_rnd[s].number_of_nodes()
+    fraction_nodes_rnd[s]=largest_component/total_nodes
+
+'''
+
+
