@@ -452,9 +452,7 @@ def p_same_pair(alpha, beta, ki, kj):
     p_essential_j = 1-((1-alpha)**kj)*(1-beta)
     return 1 - p_essential_i - p_essential_j + 2*p_essential_i*p_essential_j
 
-total_pairs = {}
-same_pairs = {}
-expected_same_pairs = {}
+dftabla5 = pd.DataFrame()
 
 for s in redesStr:   
     proba = []
@@ -483,7 +481,11 @@ for s in redesStr:
                     number_of_nonepairs += 1
     
     number_of_same_pairs = number_of_epairs + number_of_nonepairs
-    total_pairs[s] = number_of_pairs
-    same_pairs[s] = number_of_same_pairs
-    expected_same_pairs[s] = np.sum(proba)
+    
+    dftabla5.loc[s, "Total number of pairs"] = number_of_pairs
+    dftabla5.loc[s, "Number of pairs of the same type"] = number_of_same_pairs
+    dftabla5.loc[s, "Expected number of pairs of the same type (line fitting)"] = np.sum(proba)
+    
+tabla5=dftabla5.to_latex()
+
 
