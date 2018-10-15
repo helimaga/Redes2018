@@ -12,14 +12,6 @@ from random import sample
 #import scipy as sp
 from sklearn.linear_model import LinearRegression
 
-'''
-from scipy import stats
-from matplotlib import pylab
-import matplotlib.patches as mpatches
-from statsmodels.stats.proportion import proportions_ztest
-import igraph
-from matplotlib_venn import venn3, venn3_circles
-'''
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_02/'
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBiologicos/tc02Data/'
@@ -136,15 +128,12 @@ for (j,k) in iter:
 dfB2 = pd.DataFrame(ratios, columns=redesStr)
 dfB2.index = redesStr
 
-<<<<<<< HEAD
+
 tabla=dfB2.to_latex(buf=None, columns=['Y2H','AP-MS','LIT','LIT_Reguly'], col_space=None, bold_rows=False,float_format='%.3f')
 
 print('Tabla 2:\n')
 print(tabla)
-=======
-tabla2 = dfB2.to_latex(buf=None, columns=['Y2H','AP-MS','LIT','LIT_Reguly'], col_space=None, bold_rows=False,float_format='%.3f')
 
->>>>>>> Tabla 3 reformulada
 
 #%% 
 
@@ -496,45 +485,4 @@ for s in redesStr:
     total_pairs[s] = number_of_pairs
     same_pairs[s] = number_of_same_pairs
     expected_same_pairs[s] = np.sum(proba)
-
-#%%
-
-'''
-for s in redesStr:
-    redes_rnd[s] = redes[s].copy()
-    redes_ne[s] = redes[s].copy()
-    redes_ne[s].remove_nodes_from(list(nodoi for nodoi in redes_ne[s] if nodoi in essentials))
-    redes_ne_deg[s] = sorted(redes_ne[s].degree, key=lambda x: x[1])
-    essentials_deg[s] = sorted(list(tuple(nodoi, redes[s].degree(nodoi)) for nodoi in redes[s] if nodoi in essentials))
-    degreeCount[s] = collections.Counter(essentials_deg[s])
-    gnodes, dicpos = group_by_degree(redes_ne_deg[s])
-    chosen_nodes = []
-    conflict_keys = []
-    for j in degreeCount[s].keys():
-        
-        numEssentials = degreeCount[s][j]
-        
-        if dicpos.get(j) is not None: 
-            
-            numNonEssentials = len(gnodes[dicpos[j]])
-            
-            if numNonEssentials >= numEssentials:
-                chosen_nodes.append(sample(gnodes[dicpos[j]], numEssentials))
-            else:
-                chosen_nodes.append(sample(gnodes[dicpos[j]], numNonEssentials))
-                diff = numEssentials - numNonEssentials
-                conflict_keys.append(j)
-                conflict_keys.append(j)
-        else:
-            conflict_keys.append(j)
-    print(conflict_keys)
-                
-    redes_rnd[s].remove_nodes_from([item for sublist in chosen_nodes for item in sublist])
-    giant = max(nx.connected_component_subgraphs(redes_rnd[s]), key=len)
-    largest_component=giant.number_of_nodes()
-    total_nodes = redes_rnd[s].number_of_nodes()
-    fraction_nodes_rnd[s]=largest_component/total_nodes
-
-'''
-
 
