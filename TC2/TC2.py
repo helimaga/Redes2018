@@ -103,6 +103,7 @@ for (j,k) in iter:
 
 dfB2 = pd.DataFrame(ratios, columns=redesStr)
 dfB2.index = redesStr
+dfB2.to_latex()
 
 #%% 
 
@@ -197,28 +198,47 @@ def RemoveNodes(RED,method):
         x.append(1-N/N0)
         y.append(largest_component/N)
     
+    np.save(path + '%s-x_%s'%(s,method), x)
+    np.save(path + '%s-y_%s'%(s,method), y)
+    
     plt.plot(x,y,label=method)
+    return
+
+def RemoveEssentials(RED):
+    # Función que remueve los nodos esenciales de una vez.
+    red=RED.copy()
+
+    N0=red.number_of_nodes()
+    print('N0 = ',N0)
+    red.remove_nodes_from(essentials)
+    N=red.number_of_nodes()
+    print('N = ',N)
+    giant = max(nx.connected_component_subgraphs(red), key=len)
+    largest_component=giant.number_of_nodes()
+    print('largest_component = ',largest_component)
+    
+
+    x = 1-N/N0
+    y = largest_component/N0
+    print('x,y = ',x,y)
+    plt.plot(x,y,'o',label='Essentials')
     return
 
 for s in redesStr:
     print('\n\nRed: %s'%(s))
     plt.figure()
-
-    RemoveNodes(redes[s],'Random')
-    RemoveNodes(redes[s],'Degree')
-    RemoveNodes(redes[s],'Eigenvector')
-    RemoveNodes(redes[s],'Subgraph')
-    RemoveNodes(redes[s],'Shortest path')
-    RemoveNodes(redes[s],'Current flow')
     
-    #red=redes[s].copy()
-
-    #red.remove_nodes_from(essentials)
-    # FALTA TAMBIÉN AGREGAR EL PUNTO DE ESENCIALES.
+    RemoveEssentials(redes[s])
+    
+    methods=['Random', 'Degree', 'Eigenvector', 'Subgraph', 'Shortest path']#, 'Current flow']
+    
+    for m in methods:
+        RemoveNodes(redes[s],m)
+    
     
     plt.xticks(np.arange(0, 1.1, step=0.1))
     plt.yticks(np.arange(0, 1.1, step=0.1))
-    plt.xlim((0, 0.35))
+    plt.xlim((0, 0.42))
     plt.tick_params(axis='both', which='major', labelsize=NumberSize)
     plt.xlabel('Fraction of nodes', fontsize=AxisLabelSize)
     plt.ylabel('Largest connected component', fontsize=AxisLabelSize)   
@@ -226,7 +246,8 @@ for s in redesStr:
     plt.legend(loc='upper right', fontsize=LegendSize)
     plt.grid(axis='both', color='k', linestyle='dashed', linewidth=2, alpha=0.1)
     plt.show()
-    
+    plt.savefig(path+'/Figuras/Figura3-%s.pdf'%(s))
+
 
 
 #%%
