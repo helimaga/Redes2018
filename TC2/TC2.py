@@ -103,7 +103,11 @@ for (j,k) in iter:
 
 dfB2 = pd.DataFrame(ratios, columns=redesStr)
 dfB2.index = redesStr
-dfB2.to_latex()
+
+tabla=dfB2.to_latex(buf=None, columns=['Y2H','AP-MS','LIT','LIT_Reguly'], col_space=None, bold_rows=False,float_format='%.3f')
+
+print('Tabla 2:\n')
+print(tabla)
 
 #%% 
 
@@ -147,10 +151,11 @@ plt.yticks(np.arange(0, 1.1, step=0.1))
 plt.tick_params(axis='both', which='major', labelsize=NumberSize)
 plt.xlabel('Hub definition cutoff', fontsize=20)
 plt.ylabel('Fraction of essential nodes', fontsize=20)   
-plt.title('Figure 1A. Relationship between degree and essentiality in the tested networks', fontsize=30)
-plt.legend(loc='upper right', fontsize=20) 
+#plt.title('Figure 1A. Relationship between degree and essentiality in the tested networks', fontsize=15)
+plt.legend(loc='upper right', fontsize=15) 
 plt.grid(axis='both', color='k', linestyle='dashed', linewidth=2, alpha=0.1)
 plt.show()
+plt.savefig(path+'/Figuras/Figura1.pdf')
 
 
 #%%
