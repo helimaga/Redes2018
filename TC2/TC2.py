@@ -18,10 +18,10 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc02Data/'
 pathDocente = '?'
 
-path = pathHeli
+path = pathSanti
 
 plt.close('all')
-plt.rc('text', usetex=False)
+plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 TitleSize=20
@@ -429,16 +429,17 @@ for s in redesStr:
     alpha[s] = 1 - np.exp(m[s])
     beta[s] =  1 - np.exp(b[s])
     
-    textStr= '$ln(1-P_{E})=%.2fk%.2f$\n$alpha=%.2f$\n$beta=%.2f$\n$r^{2}=%.2f$'%(m[s],b[s],alpha[s],beta[s],r2)
+    textStr= r'$ln(1-P_{E}) = %.2f k %.2f \\ \alpha =%.2f \\ \beta = %.2f$ \\ $r^{2} = %.2f$'%(m[s],b[s],alpha[s],beta[s],r2)
     
     plt.figure()
-    plt.plot(x, y,'.k')
+    plt.plot(x, y,'ok')
     plt.plot(x, y_predict, 'r', label=textStr)
     plt.xlabel(r'Degree or protein connectivity ($k$)', fontsize=20)
     plt.ylabel(r'$ln(1-P_{E})$', fontsize=20)
-    plt.title('Red ' + s ,fontsize=30)
-    plt.legend(fontsize=20)
+    plt.title('Red ' + s ,fontsize=TitleSize)
+    plt.legend(fontsize=13)
     plt.show()
+    plt.savefig(path+'/Figuras/Figura2b(He)-%s.pdf'%(s))
 
 #%%
 
