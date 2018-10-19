@@ -8,6 +8,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import community as cm
 #import itertools
 #import collections
 #from random import sample
@@ -15,7 +16,7 @@ import pandas as pd
 #from sklearn.linear_model import LinearRegression
 
 
-pathHeli = '/home/heli/Documents/Redes/Practicas/tc03/'
+pathHeli = '/home/heli/Documents/Redes/Practicas/TC_03/'
 pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBiologicos/tc03/'
 pathSanti = '/home/santiago/Documentos/RC/tc03/'
 pathDocente = '?'
@@ -23,7 +24,7 @@ pathDocente = '?'
 path = pathHeli
 
 plt.close('all')
-plt.rc('text', usetex=True)
+plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
 
 TitleSize=20
@@ -67,6 +68,43 @@ edgesTot=dolphins.number_of_edges()
 a. Encuentre la partición en clusters de esta red utilizando la metodología Louvain, infomap,
 fast_greedy y edge_betweenness. Visualice los resultados gráficamente.
 '''
+dol_part_Louvain = cm.best_partition(dolphins)
+
+colour = ['r', 'g', 'b', 'c', 'm']
+dol_part_col = {}
+
+for n in dol_part_Louvain: 
+    dol_part_col[n] = colour[dol_part_Louvain[n]]
+
+dol_part_col = list(dol_part_col.values())
+
+plt.figure()
+nx.draw(dolphins,
+        width=1,
+        edge_color = 'c',
+        node_color= dol_part_col, 
+        node_size=200,
+        font_size=20,
+        with_labels=True,
+       )
+
+plt.suptitle('Red Delfines')
+plt.show()
+
+cm.generate_dendrogram(dolphins)
+
+dol_part_greedy = nx.algorithms.tree.branchings.greedy_branching(dolphins)
+
+plt.figure()
+nx.draw_edges(dol_part_greedy,
+        width=1,
+        edge_color = 'c',
+        node_color= dol_part_col, 
+        node_size=200,
+        font_size=20,
+        with_labels=True,
+       )
+
 
 # VER:
 
