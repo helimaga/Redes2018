@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import community as cm
+# https://stackoverflow.com/questions/22070196/community-detection-in-networkx
+import fastcommunity as fg # no lo pude bajar porque la pagina estaba caida
+import igraph
 #import itertools
 #import collections
 #from random import sample
@@ -21,7 +24,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc03/'
 pathDocente = '?'
 
-path = pathHeli
+path = pathJuancho
 
 plt.close('all')
 plt.rc('text', usetex=False)
@@ -68,6 +71,9 @@ edgesTot=dolphins.number_of_edges()
 a. Encuentre la partición en clusters de esta red utilizando la metodología Louvain, infomap,
 fast_greedy y edge_betweenness. Visualice los resultados gráficamente.
 '''
+
+#%% Metodología Louvain 
+
 dol_part_Louvain = cm.best_partition(dolphins)
 
 colour = ['r', 'g', 'b', 'c', 'm']
@@ -93,10 +99,11 @@ plt.show()
 
 cm.generate_dendrogram(dolphins)
 
-dol_part_greedy = nx.algorithms.tree.branchings.greedy_branching(dolphins)
+#%% Metodología Fast Greedy networkx, no sabemos que hace
 
+dol_part_greedy = nx.algorithms.tree.branchings.greedy_branching(dolphins)
 plt.figure()
-nx.draw_edges(dol_part_greedy,
+nx.draw(dol_part_greedy,
         width=1,
         edge_color = 'c',
         node_color= dol_part_col, 
@@ -105,6 +112,26 @@ nx.draw_edges(dol_part_greedy,
         with_labels=True,
        )
 
+#%% Metodología Fast Greedy igraph... no funciona elgraficado...
+
+dolphinsI = igraph.Graph.TupleList(dolphins.edges(), directed=True)
+dolphinsI.to_undirected()
+dol_part_greedy = dolphinsI.community_fastgreedy()
+print(dol_part_greedy)
+
+
+#color = list(np.random.choice(range(256), size=3))
+#print(color)
+
+i = dolphinsI.community_infomap()
+colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
+dolphinsI.vs['color'] = [None]
+for clid, cluster in enumerate(i):
+    for member in cluster:
+        dolphinsI.vs[member]['color'] = colors[clid]
+        print(clid)
+dolphinsI.vs['frame_width'] = 0
+igraph.plot(dolphinsI)
 
 # VER:
 
@@ -112,6 +139,8 @@ nx.draw_edges(dol_part_greedy,
 # https://arxiv.org/pdf/0803.0476.pdf
 # https://arxiv.org/pdf/0707.0609.pdf
 
+#%% Metodología Edge Betweenness
+#Es Newman Girvan? http://materias.df.uba.ar/redesa2018c2/files/2018/10/15_Clusters_2.pdf
 
 #%%
 '''
