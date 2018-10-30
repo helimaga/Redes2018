@@ -13,7 +13,7 @@ import community as cm
 # https://stackoverflow.com/questions/22070196/community-detection-in-networkx
 #import fastcommunity as fg # no lo pude bajar porque la pagina estaba caida
 import igraph
-import communityLayout as cl
+# import communityLayout as cl
 #import itertools
 #import collections
 #from random import sample
@@ -229,16 +229,13 @@ plt.subplot(211)
 
 plt.scatter(max(dol_part_Louvain.values())+1,modLouvain, color='g',label='Louvain')
 plt.axhline(y=modLouvain, color='g',LineWidth=0.5)
-
 plt.scatter(max(dol_part_FGreedy.values())+1,modFGreedy, color='b',label='Fast Greedy')
 plt.axhline(y=modFGreedy, color='b',LineWidth=0.5)
-
 plt.scatter(max(dol_part_IMap.values())+1,modIMap, color='y',label='Info-Map')
 plt.axhline(y=modIMap, color='y',LineWidth=0.5)
-
 plt.plot(range(2,len(modNewGirAll)+2),np.array(modNewGirAll),'.-r',label='Newman-Girvan')
-
-
+plt.xticks(range(0,65))
+plt.grid(True,color='k',axis='x',linestyle='--', linewidth=0.5)
 plt.xlabel('Number of communities')
 plt.ylabel('Modularity')
 plt.legend()
@@ -247,15 +244,13 @@ plt.subplot(212)
 
 plt.scatter(max(dol_part_Louvain.values())+1,silhouetteLouvain, color='g')
 plt.axhline(y=silhouetteLouvain, color='g',LineWidth=0.5)
-
 plt.scatter(max(dol_part_FGreedy.values())+1,silhouetteFGreedy, color='b')
 plt.axhline(y=silhouetteFGreedy, color='b',LineWidth=0.5)
-
 plt.scatter(max(dol_part_IMap.values())+1,silhouetteIMap, color='y')
 plt.axhline(y=silhouetteIMap, color='y',LineWidth=0.5)
-
 plt.plot(range(2,len(modNewGirAll)+2),np.array(silhouetteNewGirAll),'.-r')
-
+plt.xticks(range(0,65))
+plt.grid(True,color='k',axis='x',linestyle='--', linewidth=0.5)
 plt.xlabel('Number of communities')
 plt.ylabel('Silhouette')
 
@@ -287,8 +282,7 @@ for m in range(len(methods)):
 #        
 #    pos=cl.community_layout(dolphins,dol_part_Louvain)
     
-    
-    plt.subplot(141+m)
+    ax = plt.subplot(141+m)
     nx.draw(dolphins,
             pos,
             width=0.1,
@@ -298,8 +292,59 @@ for m in range(len(methods)):
             font_size=10,
             with_labels=False,
            )
+    ax.set_title(methodsStr[m])
     
 plt.show()
+#%% k-clique Percolation Method
+#%% 1: Encontrar todos los k-clicks de delfines, guardarlos en el dfClick
+import networkx.algorithms.clique as click
+
+clicks = list(click.find_cliques(dolphins))
+dfClick = pd.DataFrame()
+# df of k-clicks
+k = 4
+c = -1
+nodeStr = []
+for nck in range(len(clicks)):
+    if len(clicks[nck])==k:
+        c+=1
+        for n in range(k):
+            if c==0:
+                nodeStr.append('Node' + str(n))
+            dfClick.loc[str(c),nodeStr[n]] = clicks[nck][n]
+        dfClick.loc[str(c),'Community'] = int(0)
+NClicks = c+1
+print(dfClick)
+#%% 2: Construir un grafo donde cada nodo es un k-click y donde existe enclace
+# entre dos clicks si poseen al menos k-1 nodos en comun.
+g0 = 0
+clickEdges = []
+for p in range(NClicks):
+    for q in range(p+1,NClicks):
+        p0 = list(dfClick.loc[str(p),nodeStr])
+        q0 = list(dfClick.loc[str(q),nodeStr])
+        r = p0 + q0
+        commnodes = len(r)-len(set(r))
+        if commnodes>=k-1:
+            clickEdges.append([p,q])
+    
+kclickG = nx.Graph()
+kclickG.add_nodes_from(list(range(NClicks)))
+kclickG.add_edges_from(clickEdges)
+
+nx.draw(kclickG)
+
+kClickCC = list(nx.connected_component_subgraphs(kclickG))
+
+nodesComm = []
+for comm in range(len(kClickCC)):
+    clicksComm = list(kClickCC[comm].nodes())
+    nodesComm0 = []
+    for n in clicksComm:
+        nodesComm0 += list(dfClick.loc[str(n),nodeStr])
+    nodesComm0 = list(set(nodesComm0))
+    nodesComm.append(nodesComm0)
+
 #%%
 # plt.sca(axs[0])
 #plt.figure()
