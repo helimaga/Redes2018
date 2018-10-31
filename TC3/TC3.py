@@ -26,8 +26,6 @@ import itertools
 
 from igraph import *
 import sys
-import modularity_max
-
 
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_03/'
@@ -36,6 +34,9 @@ pathSanti = '/home/santiago/Documentos/RC/tc03/'
 pathDocente = '?'
 
 path = pathJuancho
+
+sys.path.append(path)
+import modularity_max
 
 plt.close('all')
 plt.rc('text', usetex=False)
@@ -99,7 +100,6 @@ def clusteringDolphins(metodo):
     # de: https://networkx.github.io/documentation/latest/reference/algorithms/generated/networkx.algorithms.community.modularity_max.greedy_modularity_communities.html
     
     # para importar modulos provenientes de la version trial de networkx...
-        sys.path.append(path)
         dol_part_FGreedy0 = list(modularity_max.greedy_modularity_communities(dolphins))
         dol_part_FGreedy0 = [list(x) for x in dol_part_FGreedy0]
         
@@ -319,7 +319,7 @@ modNewGirS = []
 
 modNewGir = modNewGirAll[3]
 
-N = 500
+N = 1000
 
 for shuff in range(0,N):
     print(shuff)
