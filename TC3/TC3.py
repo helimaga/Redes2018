@@ -251,7 +251,7 @@ plt.axhline(y=modFGreedy, color='b',LineWidth=0.5)
 plt.scatter(max(dol_part_IMap.values())+1,modIMap, color='y',label='Info-Map')
 plt.axhline(y=modIMap, color='y',LineWidth=0.5)
 plt.plot(range(2,len(modNewGirAll)+2),np.array(modNewGirAll),'.-r',label='Newman-Girvan')
-plt.xticks(range(0,65))
+plt.xticks(np.arange(0,65,5))
 plt.grid(True,color='k',axis='x',linestyle='--', linewidth=0.5)
 plt.xlabel('Number of communities')
 plt.ylabel('Modularity')
@@ -266,12 +266,13 @@ plt.axhline(y=silhouetteFGreedy, color='b',LineWidth=0.5)
 plt.scatter(max(dol_part_IMap.values())+1,silhouetteIMap, color='y')
 plt.axhline(y=silhouetteIMap, color='y',LineWidth=0.5)
 plt.plot(range(2,len(modNewGirAll)+2),np.array(silhouetteNewGirAll),'.-r')
-plt.xticks(range(0,65))
+plt.xticks(np.arange(0,65,5))
 plt.grid(True,color='k',axis='x',linestyle='--', linewidth=0.5)
 plt.xlabel('Number of communities')
 plt.ylabel('Silhouette')
 
 plt.show()
+
 #%% Se desprende que la mejor particion Newman-Girvan es la que considera 4 clusters
 dol_part_NewGir = dol_part_NewGirAll[3]
 #%% Graficamos las particiones de los cuatro metodos (NG = 4 clusters)...
@@ -319,13 +320,13 @@ modNewGirS = []
 
 modNewGir = modNewGirAll[3]
 
-N = 1000
+N = 50
 
 for shuff in range(0,N):
     print(shuff)
     dolphinsShuff = dolphins.copy()
-
-    dolphinsShuff = nx.double_edge_swap(dolphinsShuff, nswap=90, max_tries=500)
+    nswap = np.random.randint(1, 100)
+    dolphinsShuff = nx.double_edge_swap(dolphinsShuff, nswap=nswap, max_tries=500)
     
     modS = cm.modularity(clusteringDolphins('l'),dolphinsShuff)
     modLouvainS.append(modS)
@@ -345,7 +346,7 @@ methodStr = ['Louvain','FGreedy','IMap','NewGir']
 plt.figure()
 for sp in range(len(methodStr)):
     ax = plt.subplot(221 + sp)
-    plt.hist(eval('mod' + methodStr[sp] + 'S'), bins=int(np.floor(N/10)), color='g', edgecolor='k', label='Random Maslov Shuffling')
+    plt.hist(eval('mod' + methodStr[sp] + 'S'), bins=int(np.floor(np.sqrt(N))), color='g', edgecolor='k', label='Random Maslov Shuffling')
     plt.axvline(eval('mod' + methodStr[sp]), color='k', linestyle='dashed', linewidth=1, label='Original Network')
     plt.legend()
     plt.xlabel('Modularity')
@@ -356,9 +357,46 @@ plt.show()
 
 #%%
 '''
-c. Caracterice cuantitativamente el acuerdo entre las particiones obtenidas utilizando uno o más
-de los observables vistos en clase.
+c. Caracterice cuantitativamente el acuerdo entre las particiones obtenidas utilizando uno o más de los observables vistos en clase.
 '''
+
+dol_part_Louvain = clusteringDolphins('l')
+dol_part_FGreedy = clusteringDolphins('fg')
+dol_part_IMap = clusteringDolphins('im')
+dol_part_NewGir = dol_part_NewGirAll[3]
+
+part_methods = {'l':dol_part_Louvain,'fg':dol_part_FGreedy,'im':dol_part_IMap,'ng':dol_part_NewGir}
+dfc = {}
+
+for m in part_methods:
+    L=[]
+    for i in range(0,max(list(part_methods[m].values()))+1):
+        L0 = []
+        for n in dolphins.nodes():
+            if part_methods[m][n] == i:
+                L0.append(n)
+        L.append(dolphins.subgraph(L0))
+    
+    dfc[m] = pd.DataFrame()
+    
+    for i in range(len(L)):
+    	dfc[m].loc[i,'Nodes'] = L[i].number_of_nodes()
+    	dfc[m].loc[i,'Edges'] = L[i].number_of_edges()
+    	netDeg = np.array(list(L[i].degree()))
+    	netDeg = netDeg[:,1]
+    	netDeg = netDeg.astype(int)
+    	dfc[m].loc[i,'DegMean'] = np.mean(netDeg)
+    	dfc[m].loc[i,'DegMin'] = np.min(netDeg)
+    	dfc[m].loc[i,'DegMax'] = np.max(netDeg)
+    	dfc[m].loc[i,'DegDensity'] = nx.density(L[i])
+    	dfc[m].loc[i,'C_tri'] = nx.transitivity(L[i])
+    	dfc[m].loc[i,'C_avg'] = nx.average_clustering(L[i])
+ 
+
+
+# tabla1 = dfc.to_latex(buf=None, columns=['Nodes','Edges','DegMean','C_avg'], col_space=None, bold_rows=False,float_format='%.3f')
+
+# Serìa interesante comparar con la red original y corroborar que los valores de C_avg sea mayor que el de la red completa, etc.
 
 #%%
 '''
@@ -367,6 +405,27 @@ comunidades del grupo. Puede utilizar para ello, por ejemplo, tests de sobre-rep
 y/o sub-representacion. Qué hipótesis puede aventurar sobre propiedades comportamentales
 de este grupo de delfines a partir de lo encontrado?
 '''
+
+dol_part_Louvain = clusteringDolphins('l')
+dol_part_FGreedy = clusteringDolphins('fg')
+dol_part_IMap = clusteringDolphins('im')
+dol_part_NewGir = dol_part_NewGirAll[3]
+
+part_methods = {'l':dol_part_Louvain,'fg':dol_part_FGreedy,'im':dol_part_IMap,'ng':dol_part_NewGir}
+dfc = {}
+
+for m in part_methods:
+    L=[]
+    for i in range(0,max(list(part_methods[m].values()))+1):
+        L0 = []
+        for n in dolphins.nodes():
+            if part_methods[m][n] == i:
+                L0.append(dolphins.nodes[n]['gender'])
+        L.append(L0)
+        
+
+
+
 
 #%% k-clique Percolation Method
 '''
@@ -399,6 +458,7 @@ colour =  plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 #%%
 markerComm = ['*','.','v','^','3','4','8','+','X','H']
+plt.figure(1)
 ax = plt.subplot(221)
 nx.draw(dolphins,
         pos,
@@ -481,16 +541,21 @@ for k in range(3,6):
     #    tck, u = scipy.interpolate.splprep([x,y], k = min(len(x)-1,5))
     #    unew = np.arange(0, 1.001, 0.001)
     #    out = scipy.interpolate.splev(unew, tck)
+        plt.figure(1)
         plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=15)
-        plt.plot(x,y,'-',color=colour[comm],linewidth=1)
+       # plt.plot(x,y,'-',color=colour[comm],linewidth=1)
+    plt.figure(1)
     nx.draw(dolphins,
             pos,
             width=0.1,
             edge_color = 'k',
             node_color= 'k', 
-            node_size=50,
+            node_size=20,
             font_size=10,
             with_labels=False,
            )
-    ax.set_title(str(k) + '-cilque Percolation')
-plt.show()
+    ax.set_title(str(k) + '-clique Percolation')
+    plt.show()
+    
+# Los màs sociables deberìan ser los de mayor grado. Habria que ver si coinciden con los que pertencecen a los cliques maximales. No tendrìa por què estar relacionado esto con la comunidad a la que pertenecen.
+# Juan: los que estàn presentes en la mayor cantidad de comunidades.
