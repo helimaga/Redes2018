@@ -19,6 +19,15 @@ import igraph
 #from random import sample
 #import scipy as sp
 #from sklearn.linear_model import LinearRegression
+import numpy as np
+import scipy
+import networkx.algorithms.clique as click
+import itertools
+
+from igraph import *
+import sys
+import modularity_max
+
 
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TC_03/'
@@ -72,61 +81,64 @@ edgesTot=dolphins.number_of_edges()
 '''
 a. Encuentre la partición en clusters de esta red utilizando la metodología Louvain, infomap,
 fast_greedy y edge_betweenness. Visualice los resultados gráficamente.
+
+b. Caracterice las particiones obtenidas en términos de modularidad y silouhette de cada
+partición. Compare con valores esperados en redes recableadas y establezca si tiene derecho a
+llamar modular a esta red.
 '''
 
-#%% Metodología Louvain networkx
 
-dol_part_Louvain = cm.best_partition(dolphins)
+#%% Particionamos segun cada uno de los metodos (encapsulamos en funcion...)
+def clusteringDolphins(metodo):
+    if metodo=='l':
+        # Metodología Louvain networkx
+        dol_part= cm.best_partition(dolphins)
 
-#%% Metodología Infomap
-#https://www.youtube.com/watch?v=mO0J_H4YLJA
-from igraph import *
-dolphinsI = Graph.Read_GML(path + 'dolphins.gml')
-dol_part_IMap0 = list(dolphinsI.community_infomap())
-
-
-dol_part_IMap = {}
-vs = VertexSeq(dolphinsI)
-for n in range(len(dolphins.nodes())):
-    vStr = vs[n]['label']
-    for comm in range(len(dol_part_IMap0)):
-        if n in dol_part_IMap0[comm]:
-            dol_part_IMap[vStr] = comm
-
-
-#%% Metodología Fast Greedy (max Modularity) networkx
-# de: https://networkx.github.io/documentation/latest/reference/algorithms/generated/networkx.algorithms.community.modularity_max.greedy_modularity_communities.html
-
-# para importar modulos provenientes de la version trial de networkx...
-import sys
-sys.path.append(path)
-import modularity_max
-
-dol_part_FGreedy0 = list(modularity_max.greedy_modularity_communities(dolphins))
-dol_part_FGreedy0 = [list(x) for x in dol_part_FGreedy0]
-
-dol_part_FGreedy = {}
-for n in list(dolphins.nodes()):
-    for comm in range(len(dol_part_FGreedy0)):
-        if n in dol_part_FGreedy0[comm]:
-            dol_part_FGreedy[n] = comm
-            
-#%% Metodología Newman-Girvan (Edge Betweenness) networkx
-# http://materias.df.uba.ar/redesa2018c2/files/2018/10/15_Clusters_2.pdf... 
-# = Ejercicio TC1.2c  ... pero continuar la division un paso mas? (4 grupos?
-# Hay método implementado?
-
-dol_part_NewGir0 = list(nx.algorithms.community.centrality.girvan_newman(dolphins))
-
-dol_part_NewGirAll = [] #lista de diccionarios, cada diccionario es una particion
-for numPart in range(len(dol_part_NewGir0)): # len(dol_part_NewGir0) = N-1
-    dol_part_NewGir = {}
-    for n in list(dolphins.nodes()):
-        for comm in range(len(dol_part_NewGir0[numPart])):
-            if n in dol_part_NewGir0[numPart][comm]:
-                dol_part_NewGir[n] = comm
-    dol_part_NewGirAll.append(dol_part_NewGir)
-#%% SilhouetteJuancho
+    elif metodo=='fg':
+    # Metodología Fast Greedy (max Modularity) networkx
+    # de: https://networkx.github.io/documentation/latest/reference/algorithms/generated/networkx.algorithms.community.modularity_max.greedy_modularity_communities.html
+    
+    # para importar modulos provenientes de la version trial de networkx...
+        sys.path.append(path)
+        dol_part_FGreedy0 = list(modularity_max.greedy_modularity_communities(dolphins))
+        dol_part_FGreedy0 = [list(x) for x in dol_part_FGreedy0]
+        
+        dol_part = {}
+        for n in list(dolphins.nodes()):
+            for comm in range(len(dol_part_FGreedy0)):
+                if n in dol_part_FGreedy0[comm]:
+                    dol_part[n] = comm
+    elif metodo=='im':
+        # Metodología Infomap
+        #https://www.youtube.com/watch?v=mO0J_H4YLJA
+        dolphinsI = Graph.Read_GML(path + 'dolphins.gml')
+        dol_part_IMap0 = list(dolphinsI.community_infomap())
+        
+        dol_part = {}
+        vs = VertexSeq(dolphinsI)
+        for n in range(len(dolphins.nodes())):
+            vStr = vs[n]['label']
+            for comm in range(len(dol_part_IMap0)):
+                if n in dol_part_IMap0[comm]:
+                    dol_part[vStr] = comm
+    elif metodo=='ng':
+        # Metodología Newman-Girvan (Edge Betweenness) networkx
+        # http://materias.df.uba.ar/redesa2018c2/files/2018/10/15_Clusters_2.pdf... 
+        # = Ejercicio TC1.2c  ... pero continuar la division un paso mas? (4 grupos?
+        # Hay método implementado?
+        
+        dol_part_NewGir0 = list(nx.algorithms.community.centrality.girvan_newman(dolphins))
+        
+        dol_part = [] #lista de diccionarios, cada diccionario es una particion
+        for numPart in range(len(dol_part_NewGir0)): # len(dol_part_NewGir0) = N-1
+            dol_part_NewGir = {}
+            for n in list(dolphins.nodes()):
+                for comm in range(len(dol_part_NewGir0[numPart])):
+                    if n in dol_part_NewGir0[numPart][comm]:
+                        dol_part_NewGir[n] = comm
+            dol_part.append(dol_part_NewGir)
+    return dol_part
+#%% Definimos Silhouette
 def silhouetteJuancho(graph,commPartition,outputOpt):
     numComm = max(commPartition.values())+1
     silhouette = []
@@ -154,7 +166,7 @@ def silhouetteJuancho(graph,commPartition,outputOpt):
         return silhouette
     elif outputOpt == 'mean':
         return silhouetteAvg
-#%% SilhouetteJuancho: Testeando con grafo simple
+#%% Testeamos Silhouette
 G = nx.Graph()
 G.add_nodes_from([1,2,3,4,5,6])
 G.add_edges_from([(1,2),(2,3),(3,1),(1,4),(4,5),(5,6),(6,4)])
@@ -203,7 +215,12 @@ plt.text(0, 0.6, 'Sihouette = ' + silTest, fontsize=12)
 plt.text(0, 0.5, 'Sihouette Mean = ' + silMeanTest, fontsize=12)
 plt.show()
 
-#%% Modularity & Silhouette
+#%% Calculamos Modularidad y silhouette para todas las particiones
+
+dol_part_Louvain = clusteringDolphins('l')
+dol_part_FGreedy = clusteringDolphins('fg')
+dol_part_IMap = clusteringDolphins('im')
+dol_part_NewGirAll = clusteringDolphins('ng')
 
 silhouetteLouvain = silhouetteJuancho(dolphins,dol_part_Louvain,'mean')
 silhouetteFGreedy = silhouetteJuancho(dolphins,dol_part_FGreedy,'mean')
@@ -216,14 +233,14 @@ modIMap = cm.modularity(dol_part_IMap,dolphins)
 silhouetteNewGirAll = []
 modNewGirAll = []
 
-for numPart in range(len(dol_part_NewGirAll)):
+for numPart in range(len(clusteringDolphins('ng'))):
     silhouetteNewGirPart = silhouetteJuancho(dolphins,dol_part_NewGirAll[numPart],'mean')
     silhouetteNewGirAll.append(silhouetteNewGirPart)
     
     modNewGirPart = cm.modularity(dol_part_NewGirAll[numPart],dolphins)
     modNewGirAll.append(modNewGirPart)
 
-#%% Modularity & Silhouette. Intercomp
+#%% Intercomparamos graficamente modularidad y silhouette
 
 plt.subplot(211)
 
@@ -255,10 +272,9 @@ plt.xlabel('Number of communities')
 plt.ylabel('Silhouette')
 
 plt.show()
-#%% Determinacion de Newman-Girvan
+#%% Se desprende que la mejor particion Newman-Girvan es la que considera 4 clusters
 dol_part_NewGir = dol_part_NewGirAll[3]
-
-#%%
+#%% Graficamos las particiones de los cuatro metodos (NG = 4 clusters)...
 
 colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
                 ['r', 'g', 'b', 'k', 'm','c'],
@@ -295,234 +311,48 @@ for m in range(len(methods)):
     ax.set_title(methodsStr[m])
     
 plt.show()
-#%% k-clique Percolation Method
-#%% 1: Encontrar todos los k-clicks de delfines, guardarlos en el dfClick
-import networkx.algorithms.clique as click
+#%% Calculamos modularidad sobre redes recableadas a la Maslov
+modLouvainS = []
+modFGreedyS = []
+modIMapS = []
+modNewGirS = []
 
-clicks = list(click.find_cliques(dolphins))
-dfClick = pd.DataFrame()
-# df of k-clicks
-k = 4
-c = -1
-nodeStr = []
-for nck in range(len(clicks)):
-    if len(clicks[nck])==k:
-        c+=1
-        for n in range(k):
-            if c==0:
-                nodeStr.append('Node' + str(n))
-            dfClick.loc[str(c),nodeStr[n]] = clicks[nck][n]
-        dfClick.loc[str(c),'Community'] = int(0)
-NClicks = c+1
-print(dfClick)
-#%% 2: Construir un grafo donde cada nodo es un k-click y donde existe enclace
-# entre dos clicks si poseen al menos k-1 nodos en comun.
-g0 = 0
-clickEdges = []
-for p in range(NClicks):
-    for q in range(p+1,NClicks):
-        p0 = list(dfClick.loc[str(p),nodeStr])
-        q0 = list(dfClick.loc[str(q),nodeStr])
-        r = p0 + q0
-        commnodes = len(r)-len(set(r))
-        if commnodes>=k-1:
-            clickEdges.append([p,q])
+modNewGir = modNewGirAll[3]
+
+N = 500
+
+for shuff in range(0,N):
+    print(shuff)
+    dolphinsShuff = dolphins.copy()
+
+    dolphinsShuff = nx.double_edge_swap(dolphinsShuff, nswap=90, max_tries=500)
     
-kclickG = nx.Graph()
-kclickG.add_nodes_from(list(range(NClicks)))
-kclickG.add_edges_from(clickEdges)
+    modS = cm.modularity(clusteringDolphins('l'),dolphinsShuff)
+    modLouvainS.append(modS)
+    
+    modS = cm.modularity(clusteringDolphins('fg'),dolphinsShuff)
+    modFGreedyS.append(modS)
+    
+    modS = cm.modularity(clusteringDolphins('im'),dolphinsShuff)
+    modIMapS.append(modS)
+    
+    modS = cm.modularity(clusteringDolphins('ng')[3],dolphinsShuff)
+    modNewGirS.append(modS)
 
-nx.draw(kclickG)
+methodStr = ['Louvain','FGreedy','IMap','NewGir']
+#%% Graficamos... se desprende que la red delfines es altamente modular en 
+# comparacion con otras redes recableadas aleatoriamente a la Maslov
+plt.figure()
+for sp in range(len(methodStr)):
+    ax = plt.subplot(221 + sp)
+    plt.hist(eval('mod' + methodStr[sp] + 'S'), bins=int(np.floor(N/10)), color='g', edgecolor='k', label='Random Maslov Shuffling')
+    plt.axvline(eval('mod' + methodStr[sp]), color='k', linestyle='dashed', linewidth=1, label='Original Network')
+    plt.legend()
+    plt.xlabel('Modularity')
+    plt.ylabel('Occurence')
+    ax.set_title(methodStr[sp])
+plt.show()
 
-kClickCC = list(nx.connected_component_subgraphs(kclickG))
-
-nodesComm = []
-for comm in range(len(kClickCC)):
-    clicksComm = list(kClickCC[comm].nodes())
-    nodesComm0 = []
-    for n in clicksComm:
-        nodesComm0 += list(dfClick.loc[str(n),nodeStr])
-    nodesComm0 = list(set(nodesComm0))
-    nodesComm.append(nodesComm0)
-
-#%%
-# plt.sca(axs[0])
-#plt.figure()
-#nx.draw(dolphins,
-#        width=1,
-#        edge_color = 'm',
-#        node_color= 'k', 
-#        node_size=1,
-#        font_size=20,
-#        with_labels=True,
-#       )
-#
-#plt.suptitle('Red Delfines')
-#plt.show()
-#
-#
-#
-#
-#dol_part_col = {}
-#
-#for n in dol_part_Louvain: 
-#    dol_part_col[n] = colour[dol_part_Louvain[n]]
-#
-#dol_part_col = list(dol_part_col.values())
-#
-#plt.sca(axs[1])
-##plt.figure()
-#nx.draw(dolphins,
-#        pos,
-#        width=1,
-#        edge_color = 'c',
-#        node_color= dol_part_col, 
-#        node_size=200,
-#        font_size=20,
-#        with_labels=False,
-#       )
-#
-#plt.suptitle('Red Delfines')
-#plt.show()
-#%% Metodología Fast Greedy networkx, no sabemos que hace
-
-#dol_part_greedy = nx.algorithms.tree.branchings.greedy_branching(dolphins)
-#plt.figure()
-#nx.draw(dol_part_greedy,
-#        width=1,
-#        edge_color = 'c',
-#        node_color= dol_part_col, 
-#        node_size=200,
-#        font_size=20,
-#        with_labels=False,
-#       )
-#%% Metodología Fast Greedy igraph... no funciona elgraficado...
-#
-#dolphinsI = igraph.Graph.TupleList(dolphins.edges(), directed=True)
-#dolphinsI.to_undirected()
-#dol_part_greedy = dolphinsI.community_fastgreedy()
-#print(dol_part_greedy)
-#
-#
-##color = list(np.random.choice(range(256), size=3))
-##print(color)
-#
-#i = dolphinsI.community_infomap()
-#colors = ["#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00","#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00"]
-#dolphinsI.vs['color'] = [None]
-#for clid, cluster in enumerate(i):
-#    for member in cluster:
-#        dolphinsI.vs[member]['color'] = colors[clid]
-#        print(clid)
-#dolphinsI.vs['frame_width'] = 0
-#igraph.plot(dolphinsI)
-
-# VER:
-
-# https://github.com/taynaud/python-louvain
-# https://arxiv.org/pdf/0803.0476.pdf
-# https://arxiv.org/pdf/0707.0609.pdf
-
-
-
-
-#%% Metodología infomap
-# chequear esto: http://www.mapequation.org/code.html#Linux
-#%%
-
-#import networkx as nx
-#import matplotlib.pylab as plt
-#%matplotlib inline
-#
-## from rpy2.robjects.packages import importr
-## igraph = importr('igraph')
-## import pandas as pd
-## from rpy2.robjects import r, pandas2ri
-## a = pandas2ri.py2ri(nx.to_pandas_adjacency(nxG))
-#import igraph
-#import os
-#import numpy as np
-#import rpy2.robjects as robjects
-#
-##%%
-#
-#def community(nxG, algorithm, fig_name = "G"):
-#    """
-#    In:
-#        nxG: grafo de networkx.
-#        algorithm: string, entre las siguientes opciones: 
-#            fast_greedy
-#            edge_betweenness
-#            louvain
-#            infomap
-#        fig_name: nombre de la figura que se genera al clsuterizar. Le agrega automaticamente el nombre del algoritmo usado y el nombre del grafo si lo tuviere
-#    Out:
-#        labels: numpy array con la pertenencia de cada nodo al cluster.
-#    
-#    """
-#    gml_file_name = "G.gml"
-#    fig_name += "_"+nxG.name+"_"+algorithm+".svg"
-#    nx.write_gml(nxG, gml_file_name)
-#    
-#    igG = robjects.r('''
-#        f <- function(file, algorithm, fig_name){
-#            require("igraph")     
-#            
-#            G <- read_graph(file, "gml")
-#            #format = c("edgelist", "pajek", "ncol", "lgl", "graphml","dimacs", "graphdb", "gml", "dl"), ...)
-#            
-#            if(algorithm == "fast_greedy"){
-#                c <- cluster_fast_greedy(G, 
-#                    merges = TRUE, 
-#                    modularity = TRUE, 
-#                    membership = TRUE)
-#            }
-#            
-#            if(algorithm == "edge_betweenness"){
-#                c <- cluster_edge_betweenness(G,directed = FALSE,edge.betweenness = TRUE)
-#            }
-#            
-#            if(algorithm == "louvain"){
-#                c <- cluster_louvain(G)
-#            }
-#            
-#            if(algorithm == "infomap"){
-#                c <- cluster_infomap(G)
-#            }
-#            
-#            svg(fig_name)
-#            plot(c, G)
-#            dev.off()
-#            
-#            return(membership(c))
-#        }
-#    ''')
-#    
-#    labels = igG(gml_file_name, algorithm, fig_name)
-#    os.remove(gml_file_name)
-#    return np.array(labels)
-#
-##%%
-#nxG = nx.gnp_random_graph(100, 0.02, seed=None, directed=False)
-#nxG.name = "Random"
-#
-#nx.draw_networkx(nxG)
-#plt.axis("off")
-#plt.title(nxG.name)
-#
-##%%
-#robjects.r['options'](warn=-1)
-#labels_infomap = community(nxG, "infomap")
-#labels_infomap = community(nxG, "fast_greedy")
-#labels_infomap = community(nxG, "edge_betweenness")
-#labels_infomap = community(nxG, "louvain")    
-
-#%%
-'''
-b. Caracterice las particiones obtenidas en términos de modularidad y silouhette de cada
-partición. Compare con valores esperados en redes recableadas y establezca si tiene derecho a
-llamar modular a esta red.
-'''
 
 #%%
 '''
@@ -538,8 +368,129 @@ y/o sub-representacion. Qué hipótesis puede aventurar sobre propiedades compor
 de este grupo de delfines a partir de lo encontrado?
 '''
 
-#%%
+#%% k-clique Percolation Method
 '''
 2) [optativo] Implemente un algoritmo de reconocimiento de comunas basado en la metodología de
 percolación de cliques. Qué individuos son los más sociables de la comunidad?
 '''
+#%% Definiciones para graficar
+def ciclo(x,y):
+    from functools import reduce
+    import operator
+    import math
+    coords = []
+    for t in range(len(x)):
+        coords.append([x[t],y[t]])
+    center = tuple(map(operator.truediv, reduce(lambda x, y: map(operator.add, x, y), coords), [len(coords)] * 2))
+    ciclo0 = sorted(coords, key=lambda coord: (-135 - math.degrees(math.atan2(*tuple(map(operator.sub, coord, center))[::-1]))) % 360)
+    xCiclo = []
+    yCiclo = []
+    for n in range(len(x)):
+        xCiclo.append(ciclo0[n][0])
+        yCiclo.append(ciclo0[n][1])
+    xCiclo.append(ciclo0[0][0])
+    yCiclo.append(ciclo0[0][1])        
+    cicloF = {'x': np.array(xCiclo), 'y': np.array(yCiclo)}
+    return cicloF
+
+pos = nx.kamada_kawai_layout(dolphins)
+
+colour =  plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+#%%
+markerComm = ['*','.','v','^','3','4','8','+','X','H']
+ax = plt.subplot(221)
+nx.draw(dolphins,
+        pos,
+        width=0.1,
+        edge_color = 'k',
+        node_color= 'k', 
+        node_size=50,
+        font_size=10,
+        with_labels=False,
+       )
+ax.set_title('Dolphins')
+
+ksp = 0
+for k in range(3,6):
+    ksp += 1
+    # Encontrar todos los k-clicks de delfines, guardarlos en el dfClick
+    clicks = list(click.find_cliques(dolphins))
+    dfClick = pd.DataFrame()
+    # df of k-clicks
+    nodeStr = []
+    for v in range(k):
+        nodeStr.append('Node' + str(v))
+    
+    c = -1
+    for nck0 in range(len(clicks)):
+        if len(clicks[nck0])>=k:
+            allKClicks = list(itertools.combinations(clicks[nck0], k))
+            allKClicks = [list(elem) for elem in allKClicks]
+            for akc in range(len(allKClicks)):
+                c+=1
+                n0 = -1
+                for n in allKClicks[akc]:
+                    n0 += 1
+                    dfClick.loc[str(c),nodeStr[n0]] = n
+    
+    NClicks = c+1
+    
+    # Construir un grafo donde cada nodo es un k-click y donde existe enclace
+    # entre dos clicks si poseen al menos k-1 nodos en comun.
+    g0 = 0
+    clickEdges = []
+    for p in range(NClicks):
+        for q in range(p+1,NClicks):
+            p0 = list(dfClick.loc[str(p),nodeStr])
+            q0 = list(dfClick.loc[str(q),nodeStr])
+            r = p0 + q0
+            commnodes = len(r)-len(set(r))
+            if commnodes>=k-1:
+                clickEdges.append([p,q])
+        
+    kclickG = nx.Graph()
+    kclickG.add_nodes_from(list(range(NClicks)))
+    kclickG.add_edges_from(clickEdges)
+    
+    
+    kClickCC = list(nx.connected_component_subgraphs(kclickG))
+    
+    nodesComm = []
+    for comm in range(len(kClickCC)):
+        clicksComm = list(kClickCC[comm].nodes())
+        nodesComm0 = []
+        for n in clicksComm:
+            nodesComm0 += list(dfClick.loc[str(n),nodeStr])
+        nodesComm0 = list(set(nodesComm0))
+        nodesComm.append(nodesComm0)
+    # Graficar
+    ax = plt.subplot(221+ksp)
+    for comm in range(len(nodesComm)):
+        x = []
+        y = []
+        for n in nodesComm[comm]:
+            x.append(pos[n][0])
+            y.append(pos[n][1])
+        
+        ciclo0 = ciclo(x,y)
+        
+        x = ciclo0['x']
+        y = ciclo0['y']
+        
+    #    tck, u = scipy.interpolate.splprep([x,y], k = min(len(x)-1,5))
+    #    unew = np.arange(0, 1.001, 0.001)
+    #    out = scipy.interpolate.splev(unew, tck)
+        plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=15)
+        plt.plot(x,y,'-',color=colour[comm],linewidth=1)
+    nx.draw(dolphins,
+            pos,
+            width=0.1,
+            edge_color = 'k',
+            node_color= 'k', 
+            node_size=50,
+            font_size=10,
+            with_labels=False,
+           )
+    ax.set_title(str(k) + '-cilque Percolation')
+plt.show()
