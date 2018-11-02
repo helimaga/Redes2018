@@ -21,6 +21,7 @@ import igraph
 #from sklearn.linear_model import LinearRegression
 import numpy as np
 import scipy
+import scipy.stats as stats
 import networkx.algorithms.clique as click
 import itertools
 
@@ -279,7 +280,7 @@ dol_part_NewGir = dol_part_NewGirAll[3]
 
 colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
                 ['r', 'g', 'b', 'k', 'm','c'],
-                ['g', 'r', 'b', 'm', 'k','c'],
+                ['r', 'g', 'b', 'c', 'm','k'],
                 ['m', 'g', 'r', 'b', 'c','k']]
 
 
@@ -352,6 +353,7 @@ for sp in range(len(methodStr)):
     plt.xlabel('Modularity')
     plt.ylabel('Occurence')
     ax.set_title(methodStr[sp])
+    ax.set_xlim(0, 0.6)
 plt.show()
 
 
@@ -414,18 +416,71 @@ dol_part_NewGir = dol_part_NewGirAll[3]
 part_methods = {'l':dol_part_Louvain,'fg':dol_part_FGreedy,'im':dol_part_IMap,'ng':dol_part_NewGir}
 dfc = {}
 
+# Number of nodes
+N = len(dolphins.nodes())
+# Number of males
+Nm = list(nx.get_node_attributes(dolphins,'gender').values()).count('m')
+
+pThresh = 0.05
+
+dfFisher = pd.DataFrame()
 for m in part_methods:
-    L=[]
-    for i in range(0,max(list(part_methods[m].values()))+1):
+    for comm in range(max(list(part_methods[m].values()))+1):
         L0 = []
         for n in dolphins.nodes():
-            if part_methods[m][n] == i:
+            if part_methods[m][n] == comm:
                 L0.append(dolphins.nodes[n]['gender'])
-        L.append(L0)
-        
+        A = len(L0)
+        Am = L0.count('m')
+        oddsratio, pvalue = stats.fisher_exact([[Am,A-Am], [Nm-Am,N-A-(Nm-Am)]],'less')
+        if pvalue < pThresh:
+            dfFisher.loc['Method ' + m,'Community ' + str(comm)] = 'Female biased'
+        elif pvalue > 1 - pThresh:
+            dfFisher.loc['Method ' + m,'Community ' + str(comm)] = 'Male biased'
+        else:
+            dfFisher.loc['Method ' + m,'Community ' + str(comm)] = 'Unbiased'
+
+print(dfFisher)
+#%% Graficamossss
+
+colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
+                ['r', 'g', 'b', 'k', 'm','c'],
+                ['g', 'r', 'b', 'c', 'm','k'],
+                ['m', 'g', 'r', 'b', 'k','c']]
 
 
+methods = [dol_part_Louvain,dol_part_FGreedy,dol_part_IMap,dol_part_NewGir]
+methodsStr = ['Louvain','Fast Greedy','Info-Map','Newman-Girvan']
 
+for m in range(len(methods)):
+    colour = colourMethod[m]
+    dol_part_col = {} 
+    for n in methods[m]:
+        dol_part_col[n] = colour[methods[m][n]]
+
+    dol_part_col = list(dol_part_col.values())
+    pos = nx.kamada_kawai_layout(dolphins)
+    
+#    pos=cl.community_layout(dolphins,methods[m])
+#        
+#    pos=cl.community_layout(dolphins,dol_part_Louvain)
+    
+    ax = plt.subplot(141+m)
+    nx.draw(dolphins,
+            pos,
+            width=0.1,
+            edge_color = 'm',
+            node_color= dol_part_col, 
+            node_size=50,
+            font_size=10,
+            with_labels=False,
+           )
+    for n in methods[m]:
+        plt.text(pos[n][0],pos[n][1],dolphins.nodes[n]['gender'].upper(),FontSize=15)
+    ax.set_title(methodsStr[m],FontSize=15)
+    for comm in range(max(methods[m].values())+1):
+        plt.text(-0.1,-0.9-0.05*comm,dfFisher.iloc[m,comm],color=colourMethod[m][comm],FontSize=15)
+plt.show()
 
 #%% k-clique Percolation Method
 '''
