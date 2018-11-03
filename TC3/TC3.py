@@ -12,14 +12,13 @@ import pandas as pd
 import community as cm
 # https://stackoverflow.com/questions/22070196/community-detection-in-networkx
 #import fastcommunity as fg # no lo pude bajar porque la pagina estaba caida
-import igraph
+#import igraph
 # import communityLayout as cl
 #import itertools
 #import collections
 #from random import sample
 #import scipy as sp
 #from sklearn.linear_model import LinearRegression
-import numpy as np
 import scipy
 import scipy.stats as stats
 import networkx.algorithms.clique as click
@@ -34,7 +33,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc03/'
 pathDocente = '?'
 
-path = pathJuancho
+path = pathSanti
 
 sys.path.append(path)
 import modularity_max
@@ -242,6 +241,7 @@ for numPart in range(len(clusteringDolphins('ng'))):
     modNewGirAll.append(modNewGirPart)
 
 #%% Intercomparamos graficamente modularidad y silhouette
+plt.figure()
 
 plt.subplot(211)
 
@@ -273,10 +273,12 @@ plt.xlabel('Number of communities')
 plt.ylabel('Silhouette')
 
 plt.show()
+plt.savefig(path+'/Figuras/Modularity&Silhouette.pdf')
 
 #%% Se desprende que la mejor particion Newman-Girvan es la que considera 4 clusters
 dol_part_NewGir = dol_part_NewGirAll[3]
 #%% Graficamos las particiones de los cuatro metodos (NG = 4 clusters)...
+plt.figure()
 
 colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
                 ['r', 'g', 'b', 'k', 'm','c'],
@@ -313,6 +315,8 @@ for m in range(len(methods)):
     ax.set_title(methodsStr[m])
     
 plt.show()
+plt.savefig(path+'/Figuras/Communities.pdf')
+
 #%% Calculamos modularidad sobre redes recableadas a la Maslov
 modLouvainS = []
 modFGreedyS = []
@@ -324,7 +328,7 @@ modNewGir = modNewGirAll[3]
 N = 50
 
 for shuff in range(0,N):
-    print(shuff)
+    print('\rN = %d / %d'%(shuff+1,N),end='')
     dolphinsShuff = dolphins.copy()
     nswap = np.random.randint(1, 100)
     dolphinsShuff = nx.double_edge_swap(dolphinsShuff, nswap=nswap, max_tries=500)
@@ -349,13 +353,15 @@ for sp in range(len(methodStr)):
     ax = plt.subplot(221 + sp)
     plt.hist(eval('mod' + methodStr[sp] + 'S'), bins=int(np.floor(np.sqrt(N))), color='g', edgecolor='k', label='Random Maslov Shuffling')
     plt.axvline(eval('mod' + methodStr[sp]), color='k', linestyle='dashed', linewidth=1, label='Original Network')
-    plt.legend()
+    
     plt.xlabel('Modularity')
     plt.ylabel('Occurence')
-    ax.set_title(methodStr[sp])
+    ax.set_title(methodStr[sp],{'fontsize':15})
     ax.set_xlim(0, 0.6)
+plt.legend(bbox_to_anchor=(0.25, 2.9),fontsize=8)
+plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace = 0.5)
 plt.show()
-
+plt.savefig(path+'/Figuras/Maslov.pdf')
 
 #%%
 '''
@@ -441,7 +447,10 @@ for m in part_methods:
             dfFisher.loc['Method ' + m,'Community ' + str(comm)] = 'Unbiased'
 
 print(dfFisher)
+dfFisherLatex=dfFisher.to_latex(float_format='%.3f')
+
 #%% Graficamossss
+plt.figure()
 
 colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
                 ['r', 'g', 'b', 'k', 'm','c'],
@@ -471,16 +480,17 @@ for m in range(len(methods)):
             width=0.1,
             edge_color = 'm',
             node_color= dol_part_col, 
-            node_size=50,
+            node_size=30,
             font_size=10,
             with_labels=False,
            )
     for n in methods[m]:
-        plt.text(pos[n][0],pos[n][1],dolphins.nodes[n]['gender'].upper(),FontSize=15)
-    ax.set_title(methodsStr[m],FontSize=15)
+        plt.text(pos[n][0],pos[n][1],dolphins.nodes[n]['gender'].upper(),FontSize=10)
+    ax.set_title(methodsStr[m],FontSize=12)
     for comm in range(max(methods[m].values())+1):
-        plt.text(-0.1,-0.9-0.05*comm,dfFisher.iloc[m,comm],color=colourMethod[m][comm],FontSize=15)
+        plt.text(-0.1,-0.9-0.05*comm,dfFisher.iloc[m,comm],color=colourMethod[m][comm],FontSize=8)
 plt.show()
+plt.savefig(path+'/Figuras/Fisher.pdf')
 
 #%% k-clique Percolation Method
 '''
@@ -513,14 +523,14 @@ colour =  plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 #%%
 markerComm = ['*','.','v','^','3','4','8','+','X','H']
-plt.figure(1)
+plt.figure(123)
 ax = plt.subplot(221)
 nx.draw(dolphins,
         pos,
         width=0.1,
         edge_color = 'k',
         node_color= 'k', 
-        node_size=50,
+        node_size=20,
         font_size=10,
         with_labels=False,
        )
@@ -596,10 +606,10 @@ for k in range(3,6):
     #    tck, u = scipy.interpolate.splprep([x,y], k = min(len(x)-1,5))
     #    unew = np.arange(0, 1.001, 0.001)
     #    out = scipy.interpolate.splev(unew, tck)
-        plt.figure(1)
-        plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=15)
+        plt.figure(123)
+        plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=10)
        # plt.plot(x,y,'-',color=colour[comm],linewidth=1)
-    plt.figure(1)
+    plt.figure(123)
     nx.draw(dolphins,
             pos,
             width=0.1,
@@ -610,7 +620,9 @@ for k in range(3,6):
             with_labels=False,
            )
     ax.set_title(str(k) + '-clique Percolation')
-    plt.show()
+plt.show()
+plt.savefig(path+'/Figuras/CliquePercolation.pdf')
+
     
 # Los màs sociables deberìan ser los de mayor grado. Habria que ver si coinciden con los que pertencecen a los cliques maximales. No tendrìa por què estar relacionado esto con la comunidad a la que pertenecen.
 # Juan: los que estàn presentes en la mayor cantidad de comunidades.
