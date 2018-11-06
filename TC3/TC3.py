@@ -298,10 +298,6 @@ for m in range(len(methods)):
     dol_part_col = list(dol_part_col.values())
     pos = nx.kamada_kawai_layout(dolphins)
     
-#    pos=cl.community_layout(dolphins,methods[m])
-#        
-#    pos=cl.community_layout(dolphins,dol_part_Louvain)
-    
     ax = plt.subplot(141+m)
     nx.draw(dolphins,
             pos,
