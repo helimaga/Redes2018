@@ -24,8 +24,9 @@ import csv
 #paths
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TPs/Redes2018/TPfinal/'
-#pathJuan
-#pathSanti
+#pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBiologicos/tc03/'
+pathSanti = '/home/santiago/Documentos/RC/Redes2018/TPfinal/'
+pathDocente = '?'
 
 #%%
 
@@ -33,13 +34,13 @@ pathHeli = '/home/heli/Documents/Redes/Practicas/TPs/Redes2018/TPfinal/'
 #filtro por las secuencias con Score mayor a 0 (con algun grado de confianza para su anotacion), Gene igual a TRB == T-cell Receptor Beta, Species igual a Homo Sapiens y MHC_class (clase del Complejo Mayor de Histocompatibilidad) igual a I. 
 #me quedo con las columnas CDR3 (Complementary Determining Region 3) que corresponde a la secuencia de aminoacidos del TRB, Epitope que corresponde a la secuencia del epitope y Epitope_gene que corresponde al gen del cual proviene dicho epitope.
 
-path = pathHeli
+path = pathSanti
 
 virusStr = ['YFV', 'CMV', 'EBV', 'HIV-1', 'InfAV', 'HCV']
 TRBdf = {}
 
 for i in virusStr:    
-    df0 = pd.read_csv(path + i, sep='\t')
+    df0 = pd.read_csv(path + 'Datos/'+ i, sep='\t')
     df1 = df0[(df0.Score > 0) &(df0.Gene == 'TRB') & (df0.Species == 'HomoSapiens') & (df0.MHC_class == 'MHCI')]
     df2 = df1 [['CDR3', 'Epitope', 'Epitope_gene', 'Epitope_species']]
     df3 = df2.drop_duplicates(subset = 'CDR3')
@@ -50,7 +51,7 @@ for i in virusStr:
 #prueba de pairwise2 de Biopython
 #pairwise sequence alignment
 
-alignments = pairwise2.align.localds("LSPADKTNVKAA", "PEEKAVA", pMHCmatrix, -10, -1)
+#alignments = pairwise2.align.localds("LSPADKTNVKAA", "PEEKAVA", pMHCmatrix, -10, -1)
 
 #local -> uses Smith Waterman local alignment algorithm
 #match parameter 'd': A dictionary returns the score of any pair of characters -> BLOSUM62
@@ -98,7 +99,7 @@ for (i,j) in pairsmatrix:
 
 #falta terminar ojo, no correr este chunk!
 #escribo un archivo .csv de los TRB CDR3 (para luego calcular la kernel similarity measure)
-    
+
 TRB_CDR3 = list(TRBdf_rnd['CDR3'])
 
 path_TRB_CDR3 = '/home/heli/Documents/Lab Immunoinformatics/epitope_CDR3.csv'
@@ -137,11 +138,6 @@ for i in matrices.keys():
     
 #para encontrar el cutoff o threshold adecuado, ver como estan distribuidos los scores
 
-max(seq_scores)
-min(seq_scores)
-np.median(seq_scores)
-np.mean(seq_scores)
-np.std(seq_scores)
 
 #hay que evaluar adonde poner el cutoff para el score calculado
 #por el momento lo fije en 45 que es mas que media + 1 desvio std (Blosum62)
@@ -188,7 +184,7 @@ np.std(CDR3_netDeg)
 
 plt.figure()
 plt.hist(CDR3_netDeg, bins=60)
-plt.xticks(np.arange(0, 350, step=10))
+plt.xticks(np.arange(0, 350, step=50))
 plt.tick_params(axis='both', which='major', labelsize=10)
 plt.xlabel('Selected sequence degree', fontsize=20)
 plt.show()
@@ -207,7 +203,7 @@ plt.show()
 
 ###
 
-color_code = {'YellowFeverVirus':'m', 'CMV':'g', 'HIV-1':'k',  'EBV':'b', 'InfluenzaA':'r', 'HCV':'c'}
+color_code = {'YellowFeverVirus':'purple', 'CMV':'green', 'HIV-1':'black',  'EBV':'blue', 'InfluenzaA':'red', 'HCV':'orange'}
 
 TRB_node_color = {}
 pos = {}
@@ -241,19 +237,19 @@ nx.draw(TRB[i],
         font_size=10,
         with_labels=False,
         )
-YFV = mpatches.Patch(color='m', label='Yellow Fever Virus')
-CMV = mpatches.Patch(color='g', label='Citomegalovirus')
-HIV = mpatches.Patch(color='k', label='HIV-1')
-EBV = mpatches.Patch(color='b', label='Epstein-Barr Virus')
-InfluenzaA = mpatches.Patch(color='r', label='Influenza A Virus')
-HCV = mpatches.Patch(color='c', label='Hepatitis C Virus')
+YFV = mpatches.Patch(color='purple', label='Yellow Fever Virus')
+CMV = mpatches.Patch(color='green', label='Citomegalovirus')
+HIV = mpatches.Patch(color='black', label='HIV-1')
+EBV = mpatches.Patch(color='blue', label='Epstein-Barr Virus')
+InfluenzaA = mpatches.Patch(color='red', label='Influenza A Virus')
+HCV = mpatches.Patch(color='orange', label='Hepatitis C Virus')
 plt.legend(handles=[YFV, CMV, HIV,  EBV, InfluenzaA, HCV], fontsize=20)
 plt.show()
 
 
 #%%%
 
-
+# Comunidades:
 
 
 
