@@ -18,6 +18,9 @@ from Bio import pairwise2
 from Bio.SubsMat.MatrixInfo import blosum62
 import matplotlib.patches as mpatches
 import csv
+import sys
+
+
 
 #%%
 
@@ -28,13 +31,19 @@ pathHeli = '/home/heli/Documents/Redes/Practicas/TPs/Redes2018/TPfinal/'
 pathSanti = '/home/santiago/Documentos/RC/Redes2018/TPfinal/'
 pathDocente = '?'
 
+
+path = pathSanti
+
+sys.path.append(path)
+import Comunidades
+
+
 #%%
 
 #cargo las tablas con los TCRs asociados a epitopes conocidos de la base de datos publica VDJdb
 #filtro por las secuencias con Score mayor a 0 (con algun grado de confianza para su anotacion), Gene igual a TRB == T-cell Receptor Beta, Species igual a Homo Sapiens y MHC_class (clase del Complejo Mayor de Histocompatibilidad) igual a I. 
 #me quedo con las columnas CDR3 (Complementary Determining Region 3) que corresponde a la secuencia de aminoacidos del TRB, Epitope que corresponde a la secuencia del epitope y Epitope_gene que corresponde al gen del cual proviene dicho epitope.
 
-path = pathSanti
 
 virusStr = ['YFV', 'CMV', 'EBV', 'HIV-1', 'InfAV', 'HCV']
 TRBdf = {}
@@ -245,20 +254,22 @@ InfluenzaA = mpatches.Patch(color='red', label='Influenza A Virus')
 HCV = mpatches.Patch(color='orange', label='Hepatitis C Virus')
 plt.legend(handles=[YFV, CMV, HIV,  EBV, InfluenzaA, HCV], fontsize=20)
 plt.show()
-
+plt.savefig(path+'/Figuras/Red.pdf')
 
 #%%%
 
 # Comunidades:
 
+methods=['l','fg','im','ng']
 
+Particion={}    # diccionario que contiene las particiones de la red para los cuatro métodos.
 
+for m in methods:
+    Particion[m]=Comunidades.Communities(TRB[i],m)
 
-
-
-
-
-
+'''
+Atención: el método Infomap de la función Communities tiene todavía la información de la red de delfines. Hay que actualizarla. Además, tiene una variable 'Graph' que no está definida y no sé muy bien cómo funcionaba con los delfines. Quizás falte algún archivo. Los otros tres métodos parecen funcionar.
+'''
 
 
 

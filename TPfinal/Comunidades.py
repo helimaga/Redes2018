@@ -33,24 +33,24 @@ sys.path.append(path)
 import modularity_max
 
 #%% Particionamos segun cada uno de los metodos (encapsulamos en funcion...)
-def Comunidades(red,metodo):
+def Communities(red,metodo):
     if metodo=='l':
         # Metodología Louvain networkx
-        dol_part= cm.best_partition(red)
+        red_part= cm.best_partition(red)
 
     elif metodo=='fg':
     # Metodología Fast Greedy (max Modularity) networkx
     # de: https://networkx.github.io/documentation/latest/reference/algorithms/generated/networkx.algorithms.community.modularity_max.greedy_modularity_communities.html
     
     # para importar modulos provenientes de la version trial de networkx...
-        dol_part_FGreedy0 = list(modularity_max.greedy_modularity_communities(red))
-        dol_part_FGreedy0 = [list(x) for x in dol_part_FGreedy0]
+        red_part_FGreedy0 = list(modularity_max.greedy_modularity_communities(red))
+        red_part_FGreedy0 = [list(x) for x in red_part_FGreedy0]
         
-        dol_part = {}
+        red_part = {}
         for n in list(red.nodes()):
-            for comm in range(len(dol_part_FGreedy0)):
-                if n in dol_part_FGreedy0[comm]:
-                    dol_part[n] = comm
+            for comm in range(len(red_part_FGreedy0)):
+                if n in red_part_FGreedy0[comm]:
+                    red_part[n] = comm
     elif metodo=='im':
         # Metodología Infomap
         #https://www.youtube.com/watch?v=mO0J_H4YLJA
