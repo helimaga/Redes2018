@@ -27,15 +27,15 @@ import sys
 #paths
 
 pathHeli = '/home/heli/Documents/Redes/Practicas/TPs/Redes2018/TPfinal/'
-#pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBiologicos/tc03/'
+pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBiologicos/redes2018/TPfinal/'
 pathSanti = '/home/santiago/Documentos/RC/Redes2018/TPfinal/'
 pathDocente = '?'
 
 
-path = pathSanti
+path = pathJuancho
 
 sys.path.append(path)
-import Comunidades
+import Comunidades as COM
 
 
 #%%
@@ -52,9 +52,10 @@ for i in virusStr:
     df0 = pd.read_csv(path + 'Datos/'+ i, sep='\t')
     df1 = df0[(df0.Score > 0) &(df0.Gene == 'TRB') & (df0.Species == 'HomoSapiens') & (df0.MHC_class == 'MHCI')]
     df2 = df1 [['CDR3', 'Epitope', 'Epitope_gene', 'Epitope_species']]
+    
     df3 = df2.drop_duplicates(subset = 'CDR3')
     TRBdf[i] = df3
-
+    print(len(TRBdf[i]))
 #%%% 
     
 #prueba de pairwise2 de Biopython
@@ -73,7 +74,7 @@ for i in virusStr:
 #%%%
 
 #tomo 145 TRB de cada categoria (virus) de forma random 
-#genero un dataframe conjunto con 1200 TRB
+#genero un dataframe conjunto con 870 TRB
 
 TRBdf_rnd0 = []
 
@@ -109,13 +110,13 @@ for (i,j) in pairsmatrix:
 #falta terminar ojo, no correr este chunk!
 #escribo un archivo .csv de los TRB CDR3 (para luego calcular la kernel similarity measure)
 
-TRB_CDR3 = list(TRBdf_rnd['CDR3'])
-
-path_TRB_CDR3 = '/home/heli/Documents/Lab Immunoinformatics/epitope_CDR3.csv'
-
-with open(path_TRB_CDR3, mode='w') as TRB_file:
-    TRB_writer = csv.writer(TRB_file, delimiter='\n')
-    TRB_writer.writerow(TRB_CDR3)
+#TRB_CDR3 = list(TRBdf_rnd['CDR3'])
+#
+#path_TRB_CDR3 = '/home/heli/Documents/Lab Immunoinformatics/epitope_CDR3.csv'
+#
+#with open(path_TRB_CDR3, mode='w') as TRB_file:
+#    TRB_writer = csv.writer(TRB_file, delimiter='\n')
+#    TRB_writer.writerow(TRB_CDR3)
 
 #%%
 
@@ -144,22 +145,31 @@ for i in matrices.keys():
     selected_CDR3_pairs[i] = selected_CDR3_list
     seq_scores[i] = scorelist
     print(i)
-    
+
 #para encontrar el cutoff o threshold adecuado, ver como estan distribuidos los scores
 
 
 #hay que evaluar adonde poner el cutoff para el score calculado
 #por el momento lo fije en 45 que es mas que media + 1 desvio std (Blosum62)
-
+#%%
 #hago un histograma con los scores de las secuencias
-
-plt.figure()
-plt.hist(seq_scores, bins=500)
-plt.xticks(np.arange(0, 120, step=5))
-plt.tick_params(axis='both', which='major', labelsize=10)
-plt.xlabel('Sequence score', fontsize=20)
-plt.show()
-
+f = plt.figure()
+figManager = plt.get_current_fig_manager()
+figManager.window.showMaximized()
+sp=0
+for i in matrices.keys():
+    sp+=1
+    plt.subplot(210+sp)
+    plt.hist(seq_scores[i], bins=500)
+    plt.axvline(x=threshold[i], color='k',LineWidth=0.5)
+    #plt.xticks(np.arange(0, 80, step=5))
+    plt.xlim((0,1.5*threshold[i]))
+#    plt.ylim((0,60000))
+    plt.tick_params(axis='both', which='major', labelsize=10)
+    plt.xlabel('Sequence score', fontsize=20)
+    plt.ylabel('Occurrence (' + i + ')', fontsize=20)
+    plt.show()
+plt.savefig(f,path+'/Figuras/SequenceScore.pdf')
 #%%
 #armo el grafo con el output del pairwise alignment de secuencias
 #le agrego el atrobuto a los nodos de epitope_sp es decir a que virus corresponde el epitopes al cual se une la secuencia CDR3
@@ -171,8 +181,8 @@ for i in matrices:
     TRB[i].add_edges_from(selected_CDR3_pairs[i])
     for n in TRBdf_rnd['CDR3']:
         if n in list(TRB[i].nodes()):
-            TRB[i].nodes[n]['epitope_sp'] = TRBdf_rnd['Epitope_species'][TRBdf_rnd['CDR3'] == n].to_string(index=False)
-    
+            TRB[i].nodes[n]['epitopeSp'] = TRBdf_rnd['Epitope_species'][TRBdf_rnd['CDR3'] == n].to_string(index=False)
+
 
 TRB[i].number_of_nodes()
 TRB[i].number_of_edges()
@@ -193,7 +203,7 @@ np.std(CDR3_netDeg)
 
 plt.figure()
 plt.hist(CDR3_netDeg, bins=60)
-plt.xticks(np.arange(0, 350, step=50))
+plt.xticks(np.arange(0, 50, step=50))
 plt.tick_params(axis='both', which='major', labelsize=10)
 plt.xlabel('Selected sequence degree', fontsize=20)
 plt.show()
@@ -218,7 +228,7 @@ TRB_node_color = {}
 pos = {}
 
 for i in matrices:
-    TRB_epitopes = list(nx.get_node_attributes(TRB[i], "epitope_sp").values())
+    TRB_epitopes = list(nx.get_node_attributes(TRB[i], "epitopeSp").values())
     node_color = []
     for k in TRB_epitopes:
         node_color.append(color_code[k])
@@ -260,18 +270,17 @@ plt.savefig(path+'/Figuras/Red.pdf')
 
 # Comunidades:
 
-methods=['l','fg','im','ng']
+methods=['l','fg','im']#,'ng']
 
 Particion={}    # diccionario que contiene las particiones de la red para los cuatro métodos.
 
 for m in methods:
-    Particion[m]=Comunidades.Communities(TRB[i],m)
-
-'''
-Atención: el método Infomap de la función Communities tiene todavía la información de la red de delfines. Hay que actualizarla. Además, tiene una variable 'Graph' que no está definida y no sé muy bien cómo funcionaba con los delfines. Quizás falte algún archivo. Los otros tres métodos parecen funcionar.
-'''
+    Particion[m]=COM.Communities(TRB[i],path,m)
 
 
+#%%
+
+G = nx.star_graph(4)
 
 
 
