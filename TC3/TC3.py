@@ -12,13 +12,14 @@ import pandas as pd
 import community as cm
 # https://stackoverflow.com/questions/22070196/community-detection-in-networkx
 #import fastcommunity as fg # no lo pude bajar porque la pagina estaba caida
-#import igraph
+import igraph
 # import communityLayout as cl
 #import itertools
 #import collections
 #from random import sample
 #import scipy as sp
 #from sklearn.linear_model import LinearRegression
+import numpy as np
 import scipy
 import scipy.stats as stats
 import networkx.algorithms.clique as click
@@ -33,7 +34,7 @@ pathJuancho = '/home/gossn/Dropbox/Documents/Materias_doctorado/RedesComplejasBi
 pathSanti = '/home/santiago/Documentos/RC/tc03/'
 pathDocente = '?'
 
-path = pathSanti
+path = pathJuancho
 
 sys.path.append(path)
 import modularity_max
@@ -138,10 +139,42 @@ def clusteringDolphins(metodo):
                         dol_part_NewGir[n] = comm
             dol_part.append(dol_part_NewGir)
     return dol_part
+#%% 
+def reordenarDolphins(dol_part):
+    order0 = ['Zig','Fork','Cross']
+    partList = []
+    for comm in range(max(dol_part.values())+1):
+        partListC = []
+        for n in dol_part:
+            if dol_part[n] == comm:
+                partListC.append(n)
+        partList.append(partListC)
+    
+    commIdx = []
+    comm1 = len(order0)
+    for comm in range(len(partList)):
+        comm0 = False
+        for ord0 in order0:
+            if ord0 in partList[comm]:
+                comm0 = True
+                commIdx.append(order0.index(ord0))
+        if comm0 == False:
+            commIdx.append(comm1)
+            comm1+=1
+    partListOrd = []
+    for el in range(len(partList)):
+        partListOrd.append(partList[commIdx.index(el)])
+    
+    dol_partOrd = {}
+    for comm in range(len(partListOrd)):
+        for n in dolphins.nodes():
+            if n in partListOrd[comm]:
+                dol_partOrd[n] = comm
+    return dol_partOrd
 #%% Definimos Silhouette
 def silhouetteJuancho(graph,commPartition,outputOpt):
     numComm = max(commPartition.values())+1
-    silhouette = []
+    silhouette = {}
     silhouetteAvg = []
     for nSource in graph.nodes():
         cnk = []
@@ -160,8 +193,8 @@ def silhouetteJuancho(graph,commPartition,outputOpt):
         del cnk[commSource]
         bn = min(cnk)
         s0 = (bn-an)/max(an,bn)
-        silhouette.append(s0)
-    silhouetteAvg = np.mean(silhouette)
+        silhouette[nSource] = s0
+    silhouetteAvg = np.mean(list(silhouette.values()))
     if outputOpt == 'all':
         return silhouette
     elif outputOpt == 'mean':
@@ -241,7 +274,6 @@ for numPart in range(len(clusteringDolphins('ng'))):
     modNewGirAll.append(modNewGirPart)
 
 #%% Intercomparamos graficamente modularidad y silhouette
-plt.figure()
 
 plt.subplot(211)
 
@@ -273,46 +305,51 @@ plt.xlabel('Number of communities')
 plt.ylabel('Silhouette')
 
 plt.show()
-plt.savefig(path+'/Figuras/Modularity&Silhouette.pdf')
 
 #%% Se desprende que la mejor particion Newman-Girvan es la que considera 4 clusters
 dol_part_NewGir = dol_part_NewGirAll[3]
-#%% Graficamos las particiones de los cuatro metodos (NG = 4 clusters)...
-plt.figure()
 
-colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
-                ['r', 'g', 'b', 'k', 'm','c'],
-                ['r', 'g', 'b', 'c', 'm','k'],
-                ['m', 'g', 'r', 'b', 'c','k']]
+dol_part_Louvain = reordenarDolphins(dol_part_Louvain)
+dol_part_FGreedy = reordenarDolphins(dol_part_FGreedy)
+dol_part_IMap = reordenarDolphins(dol_part_IMap)
+dol_part_NewGir = reordenarDolphins(dol_part_NewGir)
+#%% Graficamos las particiones de los cuatro metodos (NG = 4 clusters)...
+
+colourMethod = ['r', 'g', 'b', 'm', 'y','c']
 
 
 methods = [dol_part_Louvain,dol_part_FGreedy,dol_part_IMap,dol_part_NewGir]
 methodsStr = ['Louvain','Fast Greedy','Info-Map','Newman-Girvan']
 
 for m in range(len(methods)):
-    colour = colourMethod[m]
     dol_part_col = {} 
     for n in methods[m]: 
-        dol_part_col[n] = colour[methods[m][n]]
+        dol_part_col[n] = colourMethod[methods[m][n]]
 
-    dol_part_col = list(dol_part_col.values())
+#    dol_part_col = list(dol_part_col.values())
+    dol_part_colList = []
+    for n in dolphins.nodes():
+        dol_part_colList.append(dol_part_col[n])
+
     pos = nx.kamada_kawai_layout(dolphins)
+    
+#    pos=cl.community_layout(dolphins,methods[m])
+#        
+#    pos=cl.community_layout(dolphins,dol_part_Louvain)
     
     ax = plt.subplot(141+m)
     nx.draw(dolphins,
             pos,
             width=0.1,
             edge_color = 'm',
-            node_color= dol_part_col, 
+            node_color= dol_part_colList, 
             node_size=50,
             font_size=10,
-            with_labels=False,
+            with_labels=True,
            )
     ax.set_title(methodsStr[m])
     
 plt.show()
-plt.savefig(path+'/Figuras/Communities.pdf')
-
 #%% Calculamos modularidad sobre redes recableadas a la Maslov
 modLouvainS = []
 modFGreedyS = []
@@ -324,7 +361,7 @@ modNewGir = modNewGirAll[3]
 N = 50
 
 for shuff in range(0,N):
-    print('\rN = %d / %d'%(shuff+1,N),end='')
+    print(shuff)
     dolphinsShuff = dolphins.copy()
     nswap = np.random.randint(1, 100)
     dolphinsShuff = nx.double_edge_swap(dolphinsShuff, nswap=nswap, max_tries=500)
@@ -349,25 +386,18 @@ for sp in range(len(methodStr)):
     ax = plt.subplot(221 + sp)
     plt.hist(eval('mod' + methodStr[sp] + 'S'), bins=int(np.floor(np.sqrt(N))), color='g', edgecolor='k', label='Random Maslov Shuffling')
     plt.axvline(eval('mod' + methodStr[sp]), color='k', linestyle='dashed', linewidth=1, label='Original Network')
-    
+    plt.legend()
     plt.xlabel('Modularity')
     plt.ylabel('Occurence')
-    ax.set_title(methodStr[sp],{'fontsize':15})
+    ax.set_title(methodStr[sp])
     ax.set_xlim(0, 0.6)
-plt.legend(bbox_to_anchor=(0.25, 2.9),fontsize=8)
-plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace = 0.5)
 plt.show()
-plt.savefig(path+'/Figuras/Maslov.pdf')
+
 
 #%%
 '''
 c. Caracterice cuantitativamente el acuerdo entre las particiones obtenidas utilizando uno o más de los observables vistos en clase.
 '''
-
-dol_part_Louvain = clusteringDolphins('l')
-dol_part_FGreedy = clusteringDolphins('fg')
-dol_part_IMap = clusteringDolphins('im')
-dol_part_NewGir = dol_part_NewGirAll[3]
 
 part_methods = {'l':dol_part_Louvain,'fg':dol_part_FGreedy,'im':dol_part_IMap,'ng':dol_part_NewGir}
 dfc = {}
@@ -395,13 +425,87 @@ for m in part_methods:
     	dfc[m].loc[i,'DegDensity'] = nx.density(L[i])
     	dfc[m].loc[i,'C_tri'] = nx.transitivity(L[i])
     	dfc[m].loc[i,'C_avg'] = nx.average_clustering(L[i])
- 
+
 
 
 # tabla1 = dfc.to_latex(buf=None, columns=['Nodes','Edges','DegMean','C_avg'], col_space=None, bold_rows=False,float_format='%.3f')
 
 # Serìa interesante comparar con la red original y corroborar que los valores de C_avg sea mayor que el de la red completa, etc.
+# Silueta nodo a nodo
+#%% Grafico silueta
+partitions = [dol_part_Louvain,dol_part_FGreedy,dol_part_IMap,dol_part_NewGir]
+partitionsStr = ['Louvain','Fast Greedy','Info-Map','Newman-Girvan (' + str(max(dol_part_NewGir.values())+1) + ')']
 
+f = plt.figure()
+figManager = plt.get_current_fig_manager()
+figManager.window.showMaximized()
+color0 = ['r','g','b','y','c','m']
+sp=-1
+for part0 in partitions:
+    sp+=1
+    dfSillPart = pd.DataFrame()
+    silueta0 = silhouetteJuancho(dolphins,part0,'all')
+    silMed = silhouetteJuancho(dolphins,part0,'mean')
+    print(silMed)
+    for n in dolphins.nodes():
+        dfSillPart.loc[n,'Community'] = partitions[sp][n]
+        dfSillPart.loc[n,'Color'] = color0[partitions[sp][n]]
+        dfSillPart.loc[n,'Silhouette'] = silueta0[n]
+    dfSillPart = dfSillPart.sort_values(by=['Community', 'Silhouette'], ascending=[True, False])
+
+    silueta1 = list(reversed(dfSillPart['Silhouette']))
+    color1 = list(reversed(dfSillPart['Color']))
+    nodos1 = list(reversed(dfSillPart.index))
+    
+    
+    color2 = []
+    for n in dolphins.nodes():
+        color2.append(dfSillPart.loc[n,'Color'])
+    
+    ax = plt.subplot(241+sp)
+    nx.draw(dolphins,
+            pos,
+            width=0.1,
+            edge_color = 'm',
+            node_color= color2, 
+            node_size=50,
+            font_size=10,
+            with_labels=False,
+           )
+    ax.set_title(partitionsStr[sp])
+
+    ax = plt.subplot(245+sp)
+    
+    plt.barh(range(len(nodos1)), silueta1, align='center',color=color1)
+    plt.axvline(x=silMed,color='k',linestyle='--')
+    plt.axvline(x=0,color='k',linestyle='-',linewidth=0.5)
+    plt.text(silMed,-3.4,'Mean= ' + str(round(silMed*100)/100),FontSize=12,color='k')
+    plt.yticks(range(len(nodos1)),'')
+    plt.xlabel('Silueta')
+    plt.xlim(-0.3,0.65)
+    pos = nx.kamada_kawai_layout(dolphins)
+    
+#    pos=cl.community_layout(dolphins,methods[m])
+#        
+#    pos=cl.community_layout(dolphins,dol_part_Louvain)
+    
+plt.show()
+plt.draw()
+f.savefig(path + '/Figuras/' + 'Silueta.pdf', bbox_inches='tight')
+#%%
+for m in range(len(methods)):
+    dol_part_col = {} 
+    for n in methods[m]: 
+        dol_part_col[n] = colourMethod[methods[m][n]]
+
+
+
+
+D = {u'Label1':26, u'Label2': 17, u'Label3':30}
+Dcolor = {u'Label1':'r', u'Label2':'g', u'Label3':'b'}
+
+plt.barh(range(len(D)), list(D.values()), align='center',color=Dcolor.values())
+plt.yticks(range(len(D)), list(D.keys()))
 #%%
 '''
 d. Analice cuantitativamente la relación entre el género de los delfines y la estructura de
@@ -443,10 +547,7 @@ for m in part_methods:
             dfFisher.loc['Method ' + m,'Community ' + str(comm)] = 'Unbiased'
 
 print(dfFisher)
-dfFisherLatex=dfFisher.to_latex(float_format='%.3f')
-
 #%% Graficamossss
-plt.figure()
 
 colourMethod = [['m', 'g', 'k', 'b', 'r','c'],
                 ['r', 'g', 'b', 'k', 'm','c'],
@@ -467,7 +568,6 @@ for m in range(len(methods)):
     pos = nx.kamada_kawai_layout(dolphins)
     
 #    pos=cl.community_layout(dolphins,methods[m])
-#        
 #    pos=cl.community_layout(dolphins,dol_part_Louvain)
     
     ax = plt.subplot(141+m)
@@ -476,17 +576,16 @@ for m in range(len(methods)):
             width=0.1,
             edge_color = 'm',
             node_color= dol_part_col, 
-            node_size=30,
+            node_size=50,
             font_size=10,
             with_labels=False,
            )
     for n in methods[m]:
-        plt.text(pos[n][0],pos[n][1],dolphins.nodes[n]['gender'].upper(),FontSize=10)
-    ax.set_title(methodsStr[m],FontSize=12)
+        plt.text(pos[n][0],pos[n][1],dolphins.nodes[n]['gender'].upper(),FontSize=15)
+    ax.set_title(methodsStr[m],FontSize=15)
     for comm in range(max(methods[m].values())+1):
-        plt.text(-0.1,-0.9-0.05*comm,dfFisher.iloc[m,comm],color=colourMethod[m][comm],FontSize=8)
+        plt.text(-0.1,-0.9-0.05*comm,dfFisher.iloc[m,comm],color=colourMethod[m][comm],FontSize=15)
 plt.show()
-plt.savefig(path+'/Figuras/Fisher.pdf')
 
 #%% k-clique Percolation Method
 '''
@@ -519,14 +618,14 @@ colour =  plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 #%%
 markerComm = ['*','.','v','^','3','4','8','+','X','H']
-plt.figure(123)
+plt.figure(1)
 ax = plt.subplot(221)
 nx.draw(dolphins,
         pos,
         width=0.1,
         edge_color = 'k',
         node_color= 'k', 
-        node_size=20,
+        node_size=50,
         font_size=10,
         with_labels=False,
        )
@@ -602,10 +701,10 @@ for k in range(3,6):
     #    tck, u = scipy.interpolate.splprep([x,y], k = min(len(x)-1,5))
     #    unew = np.arange(0, 1.001, 0.001)
     #    out = scipy.interpolate.splev(unew, tck)
-        plt.figure(123)
-        plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=10)
+        plt.figure(1)
+        plt.plot(x,y,markerComm[comm],color=colour[comm],markersize=15)
        # plt.plot(x,y,'-',color=colour[comm],linewidth=1)
-    plt.figure(123)
+    plt.figure(1)
     nx.draw(dolphins,
             pos,
             width=0.1,
@@ -616,9 +715,7 @@ for k in range(3,6):
             with_labels=False,
            )
     ax.set_title(str(k) + '-clique Percolation')
-plt.show()
-plt.savefig(path+'/Figuras/CliquePercolation.pdf')
-
+    plt.show()
     
 # Los màs sociables deberìan ser los de mayor grado. Habria que ver si coinciden con los que pertencecen a los cliques maximales. No tendrìa por què estar relacionado esto con la comunidad a la que pertenecen.
 # Juan: los que estàn presentes en la mayor cantidad de comunidades.
