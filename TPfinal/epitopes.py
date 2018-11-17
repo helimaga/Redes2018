@@ -32,7 +32,7 @@ pathSanti = '/home/santiago/Documentos/RC/Redes2018/TPfinal/'
 pathDocente = '?'
 
 
-path = pathJuancho
+path = pathSanti
 
 sys.path.append(path)
 import Comunidades as COM
@@ -153,9 +153,9 @@ for i in matrices.keys():
 #por el momento lo fije en 45 que es mas que media + 1 desvio std (Blosum62)
 #%%
 #hago un histograma con los scores de las secuencias
-f = plt.figure()
-figManager = plt.get_current_fig_manager()
-figManager.window.showMaximized()
+plt.figure()
+#figManager = plt.get_current_fig_manager()
+#figManager.window.showMaximized()
 sp=0
 for i in matrices.keys():
     sp+=1
@@ -165,11 +165,12 @@ for i in matrices.keys():
     #plt.xticks(np.arange(0, 80, step=5))
     plt.xlim((0,1.5*threshold[i]))
 #    plt.ylim((0,60000))
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.3)
     plt.tick_params(axis='both', which='major', labelsize=10)
-    plt.xlabel('Sequence score', fontsize=20)
-    plt.ylabel('Occurrence (' + i + ')', fontsize=20)
+    plt.xlabel('Sequence score', fontsize=10)
+    plt.ylabel('Occurrence (' + i + ')', fontsize=10)
     plt.show()
-plt.savefig(f,path+'/Figuras/SequenceScore.pdf')
+plt.savefig(path+'/Figuras/SequenceScore.pdf')
 #%%
 #armo el grafo con el output del pairwise alignment de secuencias
 #le agrego el atrobuto a los nodos de epitope_sp es decir a que virus corresponde el epitopes al cual se une la secuencia CDR3
@@ -205,9 +206,13 @@ plt.figure()
 plt.hist(CDR3_netDeg, bins=60)
 plt.xticks(np.arange(0, 50, step=50))
 plt.tick_params(axis='both', which='major', labelsize=10)
-plt.xlabel('Selected sequence degree', fontsize=20)
+plt.xlabel('Selected sequence degree', fontsize=15)
 plt.show()
+#plt.savefig(path+'/Figuras/SelectedSequenceDegree.pdf')
 
+'''
+¿Qué es este gráfico? Agregar título, nombre del eje y, etc.
+'''
 #%%
 
 #plots de los grafos TRB constriudos
@@ -219,8 +224,6 @@ plt.figure()
 nx.draw(TRB[i], width = edgewidth, node_size=80, font_size=20)
 plt.suptitle('TRB sequence similarity network', fontsize=20)
 plt.show()
-
-###
 
 color_code = {'YellowFeverVirus':'purple', 'CMV':'green', 'HIV-1':'black',  'EBV':'blue', 'InfluenzaA':'red', 'HCV':'orange'}
 
@@ -271,19 +274,17 @@ plt.savefig(path+'/Figuras/Red.pdf')
 # Comunidades:
 
 methods=['l','fg','im']#,'ng']
+methodsStr = ['Louvain','Fast Greedy','Infomap']#,'Newman-Girvan']
 
 Particion={}    # diccionario que contiene las particiones de la red para los cuatro métodos.
 
 for m in methods:
     Particion[m]=COM.Communities(TRB[i],path,m)
 
-
+'''
+TRB[i] --> Hay que iterar i.
+'''
 #%%
-
-G = nx.star_graph(4)
-
-
-
 
 
 
