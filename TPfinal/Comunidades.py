@@ -16,6 +16,8 @@ import pandas as pd
 import community as cm
 import sys
 import igraph
+import itertools as itr
+from operator import itemgetter
 #%%
 
 #paths
@@ -83,11 +85,12 @@ def Communities(red,path,metodo):
             red_part.append(red_part_NewGir)
     return red_part
 #%% Definimos Silhouette
-def silhouetteJuancho(graph,commPartition,outputOpt):
+def silhouetteJuancho(graph,commPartition,outputOpt):#modificada respecto de TC3
     numComm = max(commPartition.values())+1
-    silhouette = []
+    silhouette = {}
     silhouetteAvg = []
-    for nSource in graph.nodes():
+    nodos = sorted(list(graph.nodes()))
+    for nSource in nodos:
         cnk = []
         for comm in range(numComm):
             nNodesComm = 0
@@ -104,9 +107,105 @@ def silhouetteJuancho(graph,commPartition,outputOpt):
         del cnk[commSource]
         bn = min(cnk)
         s0 = (bn-an)/max(an,bn)
-        silhouette.append(s0)
-    silhouetteAvg = np.mean(silhouette)
+        silhouette[nSource]=s0
+    silhouetteAvg = np.mean(list(silhouette.values()))
     if outputOpt == 'all':
         return silhouette
     elif outputOpt == 'mean':
         return silhouetteAvg
+#%% Maximize Diagonal... intercambia filas de una matriz para maximizar "Traza(Mat) - NO-Traza(Mat)"
+#def MaximizeDiagonal(matrix):
+#    import numpy as np
+#    import itertools as itr
+#    from operator import itemgetter
+#    
+##    matrix = [[10,56,80],[1321,2,15],[3,540,123],[0,2,3]]
+#    
+#    N,M = np.shape(matrix)
+#    
+#    posPerm = list(itr.permutations(range(N)))
+#    
+#    P = np.shape(posPerm)[0]
+#    
+#    
+#    costF = []
+#    for p in range(P):
+#        B = []
+#        perm = posPerm[p]
+#        for n in perm:
+#            C = []
+#            for m in range(M):
+#                C.append(matrix[n][m])
+#            B.append(C)
+#        costF0=0
+#        for n in range(N):
+#            for m in range(M):
+#                if n==m:
+#                    costF0 = costF0+B[n][m]
+#                else:
+#                    costF0 = costF0-B[n][m]
+#        costF.append(costF0)
+#    
+#    
+#    bestPermIdx = max(enumerate(costF), key=itemgetter(1))[0]
+#    bestPerm = posPerm[bestPermIdx]
+#    
+#    MatPerm = []
+#    for n in range(len(bestPerm)):
+#        MatPerm.append(matrix[bestPerm[n]])
+#    return MatPerm,bestPerm
+#%% 
+def dictsValues2Mat(AD,BD):
+    # Readapta diccionario A (o B, el de menor numero de comunidades) para maximizar coincidencias...
+    # https://stackoverflow.com/questions/835092/python-dictionary-are-keys-and-values-always-the-same-order
+    # If items(), keys(), values(),  iteritems(), iterkeys(), and  itervalues() are called with no intervening modifications to the dictionary, the lists will directly correspond.
+    
+    keyA = list(AD.keys())
+    keyB = list(BD.keys())
+    if keyA != keyB:
+        raise NotImplementedError('keys son distintassss!')
+    
+    A = list(AD.values())
+    B = list(BD.values())
+    
+    N = len(A)
+    
+    permA = list(set(A))
+    permB = list(set(B))
+    
+    permMin = min(permA,permB, key=len)
+    
+    if permMin == permA: # D es el de menor numero de especies...
+        C = B
+        D = A
+    else:
+        C = A
+        D = B
+    
+    
+    posPerm = list(itr.permutations(permMin))
+    
+    costF = []
+    for p in range(len(posPerm)):
+        DPerms = []
+        for d in range(len(D)):
+            DPerms.append(posPerm[p][D[d]])
+        costF0 = 0
+        for n in range(N):
+            if C[n]==DPerms[n]:
+                costF0+=1
+        costF.append(costF0)
+    
+    bestPermIdx = max(enumerate(costF), key=itemgetter(1))[0]
+    DPerm = []
+    for d in range(len(D)):
+        DPerm.append(posPerm[bestPermIdx][D[d]])
+    
+    if permMin == permA:
+        AD = dict(zip(keyA, DPerm))
+        BD = dict(zip(keyB, C))
+    else:
+        AD = dict(zip(keyA, C))
+        BD = dict(zip(keyB, DPerm))
+    
+    return AD,BD
