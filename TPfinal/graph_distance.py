@@ -199,7 +199,7 @@ class GraphDistance:
         vertices = list(unique.keys())
         vertices.sort()
         return vertices
-
+    '''
     def __init__(self, edge_list, vertex_label={}, add_loop=False,
                  weight_vertex=1., weight_edge=1.):
         """
@@ -230,7 +230,7 @@ class GraphDistance:
                 ls = "" if len(e) < 3 else e[2]
                 self.edges[i, j] = Edge(i, j, str(ls), weight_edge)
             self._private__init__(add_loop, weight_vertex, weight_edge)
-
+            '''
 
     def __getitem__(self, index):
         """
